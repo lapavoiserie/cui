@@ -12,6 +12,7 @@ import cui.ui.VStack;
 import cui.ui.HStack;
 import cui.ui.Spacer;
 import cui.ui.Box;
+import cui.state.State;
 import cui.View;
 
 class TestAll {
@@ -215,6 +216,69 @@ class TestAll {
         assert(buf.get(1, 1).char == "X", "content");
     }
 
+    // --- State tests ---
+    // State is backed by rui.state.State; cui redraws from the dirty flag,
+    // which the platform sink raises. These cover the contract the UI relies on.
+
+    static function testState():Void {
+        section("State");
+        var s = new State<Int>(1, "s");
+        assert(s.get() == 1, "initial value");
+        assert(s.name == "s", "name");
+
+        StateBase.clearDirty();
+        s.set(2);
+        assert(s.get() == 2, "set writes");
+        assert(StateBase.isDirty(), "set marks dirty");
+
+        StateBase.clearDirty();
+        s.set(2);
+        assert(!StateBase.isDirty(), "unchanged write does not mark dirty");
+
+        s.value = 3;
+        assert(s.value == 3, "value property reads and writes");
+
+        assert(s.setTo(4) == s, "setTo returns the state");
+        assert(s.peek() == 4, "peek reads");
+
+        // A write coming from the platform reaches the value without raising
+        // the dirty flag -- the platform already reflects it.
+        StateBase.clearDirty();
+        s.applyExternal(5);
+        assert(s.get() == 5, "applyExternal writes");
+        assert(!StateBase.isDirty(), "applyExternal does not mark dirty");
+
+        assert(Std.string(s) == "5", "toString");
+    }
+
+    static function testTypedStates():Void {
+        section("Typed states");
+        var i = new IntState(0, "i");
+        i.inc();
+        i.inc(4);
+        assert(i.get() == 5, "IntState.inc");
+        i.dec(2);
+        assert(i.get() == 3, "IntState.dec");
+
+        var b = new BoolState(false, "b");
+        b.toggle();
+        assert(b.get() == true, "BoolState.toggle");
+
+        var f = new FloatState(1.5, "f");
+        f.inc(0.5);
+        assert(f.get() == 2.0, "FloatState.inc");
+
+        var str = new StringState("a", "str");
+        str.append("b");
+        assert(str.get() == "ab", "StringState.append");
+        str.clear();
+        assert(str.get() == "", "StringState.clear");
+
+        StateBase.clearDirty();
+        i.inc();
+        assert(StateBase.isDirty(), "typed state marks dirty");
+    }
+
     // --- Main ---
 
     static function main():Void {
@@ -233,6 +297,8 @@ class TestAll {
         testSpacerInHStack();
         testTextRender();
         testBoxBorder();
+        testState();
+        testTypedStates();
 
         Sys.println('\n$passed passed, $failed failed');
         if (failed > 0) Sys.exit(1);

@@ -37,6 +37,20 @@ This is an **immediate-mode** approach — `body()` is a pure function of state,
 
 All state types share: `.get()`, `.set(value)`, `.value` (get/set property), `.name` (read-only), `.setTo(value)`, `.toString()`
 
+## What backs it
+
+`State` extends [`rui.state.State`](https://lapavoiserie.github.io/rui/#/state), the
+reactive core shared with the other La Pavoiserie backends (`sui`, `aui`, `wui`, `qui`).
+A read inside a `rui` effect tracks it and a write notifies it — cui itself does not use
+effects, it redraws from a dirty flag, which a write now raises through the shared sink.
+
+Two consequences worth knowing:
+
+- **A write with an unchanged value is a no-op.** `count.set(5)` when `count` is already
+  `5` no longer schedules a redraw. Nothing is lost — there was nothing to draw.
+- **`.applyExternal(value)`** writes without raising the dirty flag, for a value that came
+  *from* the display and is therefore already on screen.
+
 ## Where State Lives
 
 | Scope | Mechanism | Details |

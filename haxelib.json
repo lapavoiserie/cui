@@ -4,10 +4,17 @@
     "description": "Declarative Terminal User Interface framework for Haxe, inspired by sui",
     "url": "",
     "license": "MIT",
-    "tags": ["tui", "terminal", "ui", "cli", "declarative"],
+    "tags": [
+        "tui",
+        "terminal",
+        "ui",
+        "cli",
+        "declarative"
+    ],
     "classPath": "src",
     "main": "Run",
     "dependencies": {
-        "hxcpp": ""
+        "hxcpp": "",
+        "rui": ""
     }
 }

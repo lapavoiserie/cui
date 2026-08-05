@@ -16,37 +16,31 @@ class StateBase {
     }
 }
 
-class State<T> {
-    var _value:T;
-    var _name:String;
+/**
+    Reactive state cell.
 
-    public var name(get, never):String;
+    The reactive half lives in `rui.state.State` — the core shared with the
+    other La Pavoiserie backends — so a read inside a `rui` effect tracks it and
+    a write notifies. cui itself does not use effects: it redraws from
+    `StateBase`'s dirty flag, which is now raised by the platform sink rather
+    than from `set()` directly. Same behaviour, one shared implementation.
 
-    function get_name():String {
-        return _name;
-    }
+    Inherited: `.get()`, `.set(v)`, `.value`, `.peek()`, `.applyExternal(v)`,
+    `.onValueChanged(sink)`, `.name`, `.dispose()`, `.toString()`.
 
+    One deliberate change: the shared `set()` skips a write whose value is
+    unchanged, so it no longer raises the dirty flag for a no-op. Every cui
+    state is a scalar, so this only removes redundant redraws.
+**/
+class State<T> extends rui.state.State<T> {
     public function new(initialValue:T, name:String) {
-        _value = initialValue;
-        _name = name;
-    }
-
-    public function get():T {
-        return _value;
-    }
-
-    public function set(v:T):Void {
-        _value = v;
-        StateBase.markDirty();
+        super(initialValue, name);
+        onValueChanged(_ -> StateBase.markDirty());
     }
 
     public function setTo(v:T):State<T> {
         set(v);
         return this;
-    }
-
-    public function toString():String {
-        return Std.string(_value);
     }
 }
 

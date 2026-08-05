@@ -1,3 +1,4 @@
+-lib rui
 -cp src
 -cp examples/dashboard
 -main DashboardApp
