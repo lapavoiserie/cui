@@ -1,5 +1,6 @@
 import cui.App;
 import cui.View;
+import cui.event.Event;
 import cui.nui.NodeRenderer;
 import cui.nui.ViewSource;
 import cui.ui.Text;
@@ -73,6 +74,24 @@ class NuiTreeApp extends App {
 			new Text("relu par ViewSource : " + described),
 			new Text("appuis : " + presses.get() + "   ·   q pour quitter")
 		], 1);
+	}
+
+	override public function handleEvent(event:Event):Bool {
+		switch (event) {
+			case Key(key):
+				switch (key.code) {
+					case Char(c):
+						if (c == "q") {
+							quit();
+							return true;
+						}
+					default:
+				}
+			default:
+		}
+		// Not handled here: let it reach the focused view, so Tab and Enter
+		// still drive the button.
+		return super.handleEvent(event);
 	}
 
 	static function main() {
