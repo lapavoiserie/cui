@@ -14,6 +14,7 @@ import cui.ui.Spacer;
 import cui.ui.Box;
 import cui.state.State;
 import cui.nui.ViewSource;
+import cui.nui.NodeRenderer;
 import nui.PropValue;
 import cui.View;
 
@@ -336,6 +337,46 @@ class TestAll {
         return s;
     }
 
+    // --- nui -> cui : rendre un arbre étranger (Phase B / B5) ---
+
+    static function testNuiRenderer():Void {
+        section("nui -> cui");
+
+        var pressed = 0;
+        var tree = new nui.Node("VStack")
+            .child(new nui.Node("Text").prop("text", nui.PropValue.PString("Salut")))
+            .child(new nui.Node("Button")
+                .prop("label", nui.PropValue.PString("OK"))
+                .prop("onClick", nui.PropValue.PCallback(() -> pressed++)));
+        tree.modifier({type: "padding", floats: [1]});
+
+        var view = NodeRenderer.build(tree);
+        assert(Std.isOfType(view, VStack), "VStack construit depuis un nui.Node");
+        assert(view.children.length == 2, "enfants construits");
+        assert(Std.isOfType(view.children[0], Text), "Text construit");
+        assert(view.modifiers.length == 1, "modificateur transposé");
+
+        // Il rend vraiment : on dessine dans un buffer et on relit les cellules.
+        var buf = new Buffer(20, 4);
+        view.render(buf, new Rect(0, 0, 20, 4));
+        // padding:1 sur la racine décale d'une colonne et d'une ligne — on lit large.
+        var line = "";
+        for (x in 0...10) line += buf.get(x, 1).char;
+        assert(StringTools.trim(line) == "Salut", "l'arbre étranger est dessiné (\"" + line + "\")");
+        assert(buf.get(0, 1).char == " ", "le padding du modificateur est appliqué");
+
+        // Un type inconnu se voit au lieu de disparaître.
+        var odd = NodeRenderer.build(new nui.Node("Hologramme"));
+        var b2 = new Buffer(12, 1);
+        odd.render(b2, new Rect(0, 0, 12, 1));
+        assert(b2.get(0, 0).char == "?", "un type inconnu s'affiche");
+
+        // Aller-retour : décrire, puis reconstruire depuis la description.
+        var src = new ViewSource(view);
+        assert(src.typeOf(src.root()) == "VStack", "aller-retour: type conservé");
+        assert(src.stringProp(src.childAt(src.root(), 0), "text") == "Salut", "aller-retour: texte conservé");
+    }
+
     // --- Main ---
 
     static function main():Void {
@@ -357,6 +398,7 @@ class TestAll {
         testState();
         testTypedStates();
         testNuiSource();
+        testNuiRenderer();
 
         Sys.println('\n$passed passed, $failed failed');
         if (failed > 0) Sys.exit(1);
