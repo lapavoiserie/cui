@@ -25,7 +25,16 @@ import nui.PropValue;
 	    haxe build-nui-tree.hxml && ./bin-nui-tree/NuiTreeApp
 **/
 class NuiTreeApp extends App {
-	@:state var presses:Int = 0;
+	@:state var lastPressed:String = "aucun";
+	@:state var pressesA:Int = 0;
+	@:state var pressesB:Int = 0;
+	@:state var pressesC:Int = 0;
+
+	static function button(label:String, onClick:Void->Void):Node {
+		return new Node("Button")
+			.prop("label", PString(label))
+			.prop("onClick", PCallback(onClick));
+	}
 
 	/** The foreign tree. Nothing here is a cui type. **/
 	function foreignTree():Node {
@@ -40,9 +49,22 @@ class NuiTreeApp extends App {
 		var boxed = new Node("Box").child(new Node("Text").prop("text", PString("dans une boîte")));
 		boxed.modifiers.push({type: "border"});
 
-		var button = new Node("Button")
-			.prop("label", PString("Appuyez sur Entrée"))
-			.prop("onClick", PCallback(function() presses.set(presses.get() + 1)));
+		// Trois boutons, pour que Tab ait quelque chose à parcourir : avec un seul
+		// focusable, le focus ne bouge jamais et Tab ne prouve rien.
+		var buttons = new Node("HStack")
+			.prop("spacing", PInt(2))
+			.child(button("Alpha", function() {
+				pressesA.set(pressesA.get() + 1);
+				lastPressed.set("Alpha");
+			}))
+			.child(button("Bravo", function() {
+				pressesB.set(pressesB.get() + 1);
+				lastPressed.set("Bravo");
+			}))
+			.child(button("Charlie", function() {
+				pressesC.set(pressesC.get() + 1);
+				lastPressed.set("Charlie");
+			}));
 
 		var unknown = new Node("Hologramme");
 
@@ -51,7 +73,7 @@ class NuiTreeApp extends App {
 			.child(header)
 			.child(row)
 			.child(boxed)
-			.child(button)
+			.child(buttons)
 			.child(new Node("Text").prop("text", PString("type inconnu ci-dessous :")))
 			.child(unknown);
 
@@ -72,7 +94,11 @@ class NuiTreeApp extends App {
 			new Text("cui affiche un arbre nui").bold(),
 			rendered,
 			new Text("relu par ViewSource : " + described),
-			new Text("appuis : " + presses.get() + "   ·   q pour quitter")
+			new Text("Tab / Maj-Tab pour circuler · Entrée pour actionner · q pour quitter"),
+			new Text("dernier : " + lastPressed.get()
+				+ "   ·   Alpha " + pressesA.get()
+				+ " · Bravo " + pressesB.get()
+				+ " · Charlie " + pressesC.get())
 		], 1);
 	}
 
