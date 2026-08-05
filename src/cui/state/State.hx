@@ -26,7 +26,7 @@ class StateBase {
     than from `set()` directly. Same behaviour, one shared implementation.
 
     Inherited: `.get()`, `.set(v)`, `.value`, `.peek()`, `.applyExternal(v)`,
-    `.onValueChanged(sink)`, `.name`, `.dispose()`, `.toString()`.
+    `.setPlatformSink(sink)`, `.name`, `.dispose()`, `.toString()`.
 
     One deliberate change: the shared `set()` skips a write whose value is
     unchanged, so it no longer raises the dirty flag for a no-op. Every cui
@@ -35,7 +35,7 @@ class StateBase {
 class State<T> extends rui.state.State<T> {
     public function new(initialValue:T, name:String) {
         super(initialValue, name);
-        onValueChanged(_ -> StateBase.markDirty());
+        setPlatformSink(_ -> StateBase.markDirty());
     }
 
     public function setTo(v:T):State<T> {
