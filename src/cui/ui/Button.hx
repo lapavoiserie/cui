@@ -10,7 +10,8 @@ import cui.render.Buffer;
 import cui.render.Style;
 
 class Button extends View {
-    var label:String;
+    public var label(default, null):String;
+
     var action:Void->Void;
 
     public function new(label:String, action:Void->Void) {
@@ -18,6 +19,17 @@ class Button extends View {
         this.label = label;
         this.action = action;
         this.focusable = true;
+    }
+
+    /**
+        Run the button's action.
+
+        The closure itself stays private on purpose: a description layer must be
+        able to *trigger* an action without ever holding the handler. See nui's
+        node model, where actions cross as identifiers and never as closures.
+    **/
+    public function invoke():Void {
+        if (action != null) action();
     }
 
     override public function measure(constraint:Constraint):Size {

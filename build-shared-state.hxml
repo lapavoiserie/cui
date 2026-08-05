@@ -1,5 +1,6 @@
 -lib rui
 -cp src
+-lib nui
 -cp examples/shared-state
 -main SharedStateApp
 -cpp bin-shared-state

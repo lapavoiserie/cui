@@ -15,6 +15,7 @@
     "main": "Run",
     "dependencies": {
         "hxcpp": "",
-        "rui": ""
+        "rui": "",
+        "nui": ""
     }
 }

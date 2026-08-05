@@ -7,7 +7,7 @@ import cui.layout.Size;
 import cui.render.Buffer;
 
 class VStack extends View {
-    var spacing:Int;
+    public var spacing(default, null):Int;
 
     public function new(children:Array<View>, spacing:Int = 0) {
         super();

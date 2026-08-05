@@ -7,7 +7,7 @@ import cui.layout.Size;
 import cui.render.Buffer;
 
 class Box extends View {
-    var child:View;
+    public var child(default, null):View;
 
     public function new(?child:View) {
         super();

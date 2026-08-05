@@ -1,5 +1,6 @@
 -lib rui
 -cp src
+-lib nui
 -cp examples/hello
 -main HelloApp
 -cpp bin

@@ -13,6 +13,8 @@ import cui.ui.HStack;
 import cui.ui.Spacer;
 import cui.ui.Box;
 import cui.state.State;
+import cui.nui.ViewSource;
+import nui.PropValue;
 import cui.View;
 
 class TestAll {
@@ -279,6 +281,61 @@ class TestAll {
         assert(StateBase.isDirty(), "typed state marks dirty");
     }
 
+    // --- nui pull contract (Phase B / B3) ---
+    // Proves a consumer that knows nothing about cui can walk its tree.
+
+    static function testNuiSource():Void {
+        section("nui — pull contract");
+
+        var pressed = 0;
+        var btn = new cui.ui.Button("Ajouter", () -> pressed++);
+        var stack = new VStack([new Text("Bonjour"), btn], 2);
+        stack.modifiers.push(cui.modifiers.ViewModifier.PaddingAll(4));
+        stack.modifiers.push(cui.modifiers.ViewModifier.Border(cui.render.BorderStyle.Single));
+
+        var src = new ViewSource(stack);
+
+        assert(src.typeOf(src.root()) == "VStack", "typeOf");
+        assert(src.childCount(src.root()) == 2, "childCount");
+        assert(src.typeOf(src.childAt(src.root(), 0)) == "Text", "childAt");
+        assert(src.keyOf(src.root()) == null, "keyOf is null: cui has no identity");
+
+        assert(src.stringProp(src.childAt(src.root(), 0), "text") == "Bonjour", "text is a plain property");
+        assert(src.intProp(src.root(), "spacing") == 2, "typed int property");
+        assert(src.stringProp(src.root(), "label") == "", "absent property is empty");
+        assert(!src.hasProp(src.root(), "label"), "hasProp");
+        assert(src.boolProp(src.childAt(src.root(), 1), "focusable"), "typed bool property");
+
+        assert(src.modifierCount(src.root()) == 2, "modifier chain length");
+        assert(src.modifierType(src.root(), 0) == "padding", "modifier type");
+        assert(src.modifierFloat(src.root(), 0, 0) == 4.0, "modifier float param");
+        assert(src.modifierType(src.root(), 1) == "border", "modifier order preserved");
+
+        var id = src.actionId(src.childAt(src.root(), 1));
+        assert(id >= 0, "action has an id");
+        assert(src.actionId(src.root()) == -1, "no action means -1");
+        src.invokeActionId(id);
+        assert(pressed == 1, "action runs through its id, never a closure");
+
+        // Un consommateur générique : ne connaît que le contrat.
+        assert(dump(src, src.root()) == "VStack[padding,border](Text,Button)", "generic walk");
+    }
+
+    static function dump(src:ViewSource, n:cui.View):String {
+        var s = src.typeOf(n);
+        if (src.modifierCount(n) > 0) {
+            var mods = [];
+            for (i in 0...src.modifierCount(n)) mods.push(src.modifierType(n, i));
+            s += "[" + mods.join(",") + "]";
+        }
+        if (src.childCount(n) > 0) {
+            var kids = [];
+            for (i in 0...src.childCount(n)) kids.push(dump(src, src.childAt(n, i)));
+            s += "(" + kids.join(",") + ")";
+        }
+        return s;
+    }
+
     // --- Main ---
 
     static function main():Void {
@@ -299,6 +356,7 @@ class TestAll {
         testBoxBorder();
         testState();
         testTypedStates();
+        testNuiSource();
 
         Sys.println('\n$passed passed, $failed failed');
         if (failed > 0) Sys.exit(1);

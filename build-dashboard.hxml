@@ -1,5 +1,6 @@
 -lib rui
 -cp src
+-lib nui
 -cp examples/dashboard
 -main DashboardApp
 -cpp bin-dashboard

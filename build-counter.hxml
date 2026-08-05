@@ -1,5 +1,6 @@
 -lib rui
 -cp src
+-lib nui
 -cp examples/counter
 -main CounterApp
 -cpp bin-counter
