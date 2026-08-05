@@ -52,6 +52,7 @@ class StateMacro {
                 pack: ["cui", "state"],
                 name: "State",
                 sub: stateClassName,
+                params: stateClassName == "State" ? [TPType(origType)] : [],
             });
 
             newFields.push({

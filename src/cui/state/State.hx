@@ -26,18 +26,6 @@ class State<T> {
         return _name;
     }
 
-    /** Read or write the state value. Writing triggers a dirty flag. **/
-    public var value(get, set):T;
-
-    function get_value():T {
-        return _value;
-    }
-
-    function set_value(v:T):T {
-        set(v);
-        return v;
-    }
-
     public function new(initialValue:T, name:String) {
         _value = initialValue;
         _name = name;
