@@ -1,0 +1,6 @@
+-lib rui
+-lib nui
+-cp src
+-cp examples/nui-tree
+-main NuiTreeApp
+-cpp bin-nui-tree
