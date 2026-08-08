@@ -4,3 +4,4 @@
 -cp examples/todo
 -main TodoApp
 -cpp bin-todo
+--macro rui.macros.ViewRule.register("cui.App", "body")

@@ -17,11 +17,15 @@ import cui.ui.ListView;
 class TodoApp extends App {
     @:state var inputText:String = "";
     @:state var selectedIdx:Int = 0;
-    var todos:Array<String>;
+    // Observable, so the view can be told when it changes -- and immutable, so
+    // a change is a new value rather than a mutation nobody sees. Before, this
+    // was a plain Array mutated in place and followed by StateBase.markDirty():
+    // a manual refresh standing in for a dependency the framework could not see.
+    @:state var todos:rui.structures.ImmutableList<String> =
+        new rui.structures.ImmutableList(["Buy groceries", "Write documentation", "Review pull request"]);
 
     public function new() {
         super();
-        todos = ["Buy groceries", "Write documentation", "Review pull request"];
     }
 
     override public function body():View {
@@ -31,15 +35,15 @@ class TodoApp extends App {
             new Text("CUI Todo App")
                 .bold()
                 .foregroundColor(Color.Named(NamedColor.Cyan)),
-            new Text('${todos.length} items').dim(),
+            new Text('${todos.value.length} items').dim(),
             new Spacer(),
-            cast(new ListView(todos, selection, null, (idx) -> {
-                if (idx >= 0 && idx < todos.length) {
-                    todos.splice(idx, 1);
-                    if (selectedIdx.get() >= todos.length && todos.length > 0) {
-                        selectedIdx.set(todos.length - 1);
+            cast(new ListView(todos.value.toArray(), selection, null, (idx) -> {
+                if (idx >= 0 && idx < todos.value.length) {
+                    var kept = [for (i in 0...todos.value.length) if (i != idx) todos.value.get(i)];
+                    todos.value = new rui.structures.ImmutableList(kept);
+                    if (selectedIdx.get() >= todos.value.length && todos.value.length > 0) {
+                        selectedIdx.set(todos.value.length - 1);
                     }
-                    StateBase.markDirty();
                 }
             }), View)
                 .border(Single)
@@ -55,15 +59,16 @@ class TodoApp extends App {
                 new Button("Add", () -> {
                     var text = inputText.get();
                     if (text.length > 0) {
-                        todos.push(text);
+                        todos.value = todos.value.push(text);
                         inputText.set("");
                     }
                 }),
                 new Spacer(),
                 new Button("Clear All", () -> {
-                    todos.splice(0, todos.length);
+                    // An empty list is a new value, so the view is told. The old
+                    // line mutated in place and asked for a repaint by hand.
+                    todos.value = new rui.structures.ImmutableList();
                     selectedIdx.set(0);
-                    StateBase.markDirty();
                 }),
                 new Spacer(),
             ], 1),
