@@ -147,6 +147,15 @@ class Tabs extends View {
                 }
             default:
         }
+
+        // Then the tab showing. Its content is rendered from `tabs`, not from
+        // `children`, so a walk of the tree cannot reach it -- which left a
+        // scroll view inside a tab unable to hear an arrow key at all. The tabs
+        // own those views, so the tabs pass the event on.
+        var idx = getActiveIndex();
+        if (idx >= 0 && idx < tabs.length && tabs[idx].content != null) {
+            return tabs[idx].content.handleEvent(event);
+        }
         return false;
     }
 }
