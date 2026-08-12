@@ -75,6 +75,29 @@ class Text extends View {
         if (maxWidth <= 0) return [text];
 
         var lines = new Array<String>();
+
+        // Break on the newlines the text already carries, before wrapping on
+        // width. Without this a string short enough to fit was pushed whole --
+        // its "\n" included -- so everything after the first line vanished at
+        // the point the terminal met a control character it could not draw. A
+        // caption written on two lines showed one, and only when it was short
+        // enough to fit; longer text wrapped and looked fine, which is why it
+        // went unnoticed.
+        for (paragraph in text.split("\n")) {
+            wrapParagraph(paragraph, maxWidth, lines);
+        }
+
+        if (lines.length == 0) lines.push("");
+        return lines;
+    }
+
+    /** Wrap one newline-free run into `lines`, breaking at spaces. **/
+    static function wrapParagraph(text:String, maxWidth:Int, lines:Array<String>):Void {
+        if (text.length == 0) {
+            lines.push("");
+            return;
+        }
+
         var remaining = text;
 
         while (remaining.length > 0) {
@@ -98,8 +121,5 @@ class Text extends View {
                 remaining = remaining.substr(1);
             }
         }
-
-        if (lines.length == 0) lines.push("");
-        return lines;
     }
 }
