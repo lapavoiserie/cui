@@ -56,6 +56,7 @@ loop:
     handle Ctrl+C            // built-in quit
     handle Tab/Shift-Tab     // focus navigation
     dispatch to focused view // Button, Input, ListView, etc.
+    offer to the view tree   // deepest child first: ScrollView, Tabs
     dispatch to app handler  // handleEvent()
     if state dirty:
         re-render
@@ -109,7 +110,31 @@ The `AnsiBackend` parses raw bytes from stdin into `Event` values:
 2. Views with `focusable = true` are collected in order
 3. Tab/Shift-Tab cycles `focusIndex`
 4. Mouse clicks call `hitTest()` on the view tree to find the clicked focusable view
-5. Events are dispatched to the focused view first, then bubble to the app handler
+5. Events are dispatched to the focused view first, then offered to the rendered
+   tree, then to the app handler
+
+### Why the tree pass exists
+
+Focus is for what you interact with **directly** — something to type into, to
+activate. A `ScrollView` and a `Tabs` are neither, so neither is focusable, and
+with only a focused dispatch their `handleEvent` was never called: a page taller
+than the terminal could not be moved and a tabbed app was stuck on its first
+tab, with nothing to press.
+
+Making them focusable was the smaller change and the wrong one — you would tab
+past every button on the page to reach the scrolling. So what focus declines is
+offered to the tree, **deepest child first**, and the order matters in both
+directions: focus keeps priority so a text field still owns its own arrows, and
+an inner view wins over the container around it, so nested scroll views behave
+the way they do everywhere else.
+
+Nothing in the loop knows which view wants which key. A view says so by
+answering `handleEvent` — the same contract the focused dispatch uses. Adding a
+view that reacts to a key means touching nothing else.
+
+One exception is worth knowing: `Tabs` renders its content from its own `tabs`
+list rather than from `children`, so no walk of the tree can reach a view inside
+a tab. The tabs own those views, so the tabs forward what they do not use.
 
 ## State System
 
