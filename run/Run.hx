@@ -19,6 +19,11 @@ class Run {
             case "init":
                 var appName = args.length > 1 ? args[1] : "MyApp";
                 initProject(cwd, appName);
+            case "build":
+                buildProject(cwd);
+            case "run":
+                buildProject(cwd);
+                runBinary(cwd);
             case "help":
                 printUsage();
             default:
@@ -32,7 +37,52 @@ class Run {
         Sys.println("");
         Sys.println("Usage:");
         Sys.println("  haxelib run cui init [AppName]  Create a new cui project");
+        Sys.println("  haxelib run cui build            Compile build.hxml");
+        Sys.println("  haxelib run cui run              Compile it, then run it");
         Sys.println("  haxelib run cui help             Show this help");
+    }
+
+    /**
+        Compile the project.
+
+        There is no pipeline here -- a terminal application is the binary Haxe
+        produces, and nothing follows. `build` exists all the same, so that
+        `mui build cui` can delegate to this CLI like it delegates to every
+        other, instead of `mui` knowing that cui is the one that compiles
+        straight.
+    **/
+    static function buildProject(cwd:String):Void {
+        var hxml = sys.FileSystem.exists(cwd + "build-cui.hxml") ? "build-cui.hxml" : "build.hxml";
+        if (!sys.FileSystem.exists(cwd + hxml)) {
+            Sys.println('Error: $hxml not found in $cwd');
+            Sys.exit(1);
+        }
+        Sys.setCwd(cwd);
+        var code = Sys.command("haxe", [hxml]);
+        if (code != 0) Sys.exit(code);
+        Sys.println("Build complete: build/cui/");
+    }
+
+    /** Run what `build` produced, found by reading `-main` out of the hxml. **/
+    static function runBinary(cwd:String):Void {
+        var hxml = sys.FileSystem.exists(cwd + "build-cui.hxml") ? "build-cui.hxml" : "build.hxml";
+        var main = null;
+        for (line in File.getContent(cwd + hxml).split("\n")) {
+            var trimmed = StringTools.trim(line);
+            for (flag in ["-main ", "--main "])
+                if (StringTools.startsWith(trimmed, flag))
+                    main = StringTools.trim(trimmed.substr(flag.length));
+        }
+        if (main == null) {
+            Sys.println("Error: no -main in " + hxml);
+            Sys.exit(1);
+        }
+        var binary = cwd + "build/cui/" + main;
+        if (!sys.FileSystem.exists(binary)) {
+            Sys.println('Error: $binary not found');
+            Sys.exit(1);
+        }
+        Sys.exit(Sys.command(binary));
     }
 
     static function initProject(cwd:String, appName:String):Void {

@@ -1,0 +1,19 @@
+package cui.mui;
+
+/**
+	`cui`'s conformance for `mui.state.AnimationCurve`.
+
+	Moved here from the `#if (mui_backend == "cui")` branch it used to live in.
+	`mui` resolves it by name through `mui.Contract`, and lists it as optional
+	because the six backends genuinely disagree about which of these exist.
+**/
+// TUI has no animation system -- enum is provided for API compatibility
+enum AnimationCurve {
+    Default;
+    EaseIn;
+    EaseOut;
+    EaseInOut;
+    Spring;
+    Linear;
+    Bouncy;
+}
