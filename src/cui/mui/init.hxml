@@ -1,0 +1,15 @@
+# What `mui init` writes as `build-cui.hxml`.
+#
+# It lives here rather than in `mui` because what a build for this backend needs
+# -- which libraries, which generator macro, which output -- is ours to state,
+# and `mui` had no way of keeping six of these honest. `$MAIN` is the only thing
+# substituted.
+-cp src
+-lib mui
+-lib cui
+-lib rui
+-lib nui
+-D mui_backend=cui
+--macro mui.macros.Bind.all()
+--main $MAIN
+-cpp build/cui
