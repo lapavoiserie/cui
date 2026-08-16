@@ -36,22 +36,35 @@ import cui.layout.Size;
 	silent ones discarded, which is what makes a resize not freeze the
 	application.
 
-	## UTF-8
+	## Output goes to the console directly, not through the C runtime
 
-	The output code page is set to UTF-8, because `writeStdout` goes through
-	`Sys.print` and Haxe strings arrive as UTF-8. Without it a box-drawing
-	character becomes two pieces of mojibake — the frame is the first thing
-	anyone notices.
+	`Sys.print` reaches `printf`, and MSVC's C runtime does its **own** conversion
+	when it notices it is writing to a console — using the runtime's locale, not
+	the console output code page. So `SetConsoleOutputCP(CP_UTF8)` looks like the
+	fix, is the fix everywhere else, and changes nothing here: a box-drawing
+	`┌` (UTF-8 `E2 94 8C`) still arrives as `Ôöî`, its three bytes read as CP850.
+	That was the first thing anyone noticed, and it was reported from a PowerShell
+	window before any of it was understood.
+
+	So the C runtime is bypassed. A Haxe string is already UTF-16 in hxcpp, and
+	`WriteConsoleW` takes UTF-16 — no code page is consulted by anyone, and
+	nothing global is mutated for whatever else shares the console.
+
+	Redirected output has no console to write to, so it falls back to UTF-8 bytes
+	on `stdout`. That path matters: it is what a frame dump or a piped capture
+	uses.
 **/
 @:headerCode('
 #ifdef _WIN32
 #include <windows.h>
+#include <stdio.h>
+#include <string.h>
+#include <wchar.h>
 
 static HANDLE cui_win_in = INVALID_HANDLE_VALUE;
 static HANDLE cui_win_out = INVALID_HANDLE_VALUE;
 static DWORD cui_win_in_mode = 0;
 static DWORD cui_win_out_mode = 0;
-static UINT cui_win_out_cp = 0;
 static bool cui_win_raw = false;
 
 // Discard the records that produce no bytes, so a later ReadFile cannot block
@@ -83,7 +96,6 @@ class WindowsTerminal {
 
 		GetConsoleMode(cui_win_in, &cui_win_in_mode);
 		GetConsoleMode(cui_win_out, &cui_win_out_mode);
-		cui_win_out_cp = GetConsoleOutputCP();
 
 		DWORD out_mode = cui_win_out_mode
 			| ENABLE_PROCESSED_OUTPUT
@@ -100,7 +112,6 @@ class WindowsTerminal {
 		in_mode |= ENABLE_VIRTUAL_TERMINAL_INPUT | ENABLE_MOUSE_INPUT | ENABLE_EXTENDED_FLAGS;
 		SetConsoleMode(cui_win_in, in_mode);
 
-		SetConsoleOutputCP(CP_UTF8);
 		cui_win_raw = true;
 #endif
 	')
@@ -111,7 +122,6 @@ class WindowsTerminal {
 		if (!cui_win_raw) return;
 		SetConsoleMode(cui_win_in, cui_win_in_mode);
 		SetConsoleMode(cui_win_out, cui_win_out_mode);
-		if (cui_win_out_cp != 0) SetConsoleOutputCP(cui_win_out_cp);
 		cui_win_raw = false;
 #endif
 	')
@@ -182,7 +192,27 @@ class WindowsTerminal {
 		return -1;
 	}
 
-	/** Output goes through Haxe, which encodes UTF-8 — the console is set to match. **/
+	@:functionCode('
+#ifdef _WIN32
+		HANDLE out = cui_win_out != INVALID_HANDLE_VALUE
+			? cui_win_out : GetStdHandle(STD_OUTPUT_HANDLE);
+		DWORD mode = 0;
+		// GetConsoleMode succeeding is what "this is a console" means. When it
+		// fails the output is redirected, and bytes are what is wanted.
+		if (out != INVALID_HANDLE_VALUE && GetConsoleMode(out, &mode)) {
+			hx::strbuf wide;
+			const wchar_t *text = data.wchar_str(&wide);
+			if (text) {
+				DWORD written = 0;
+				WriteConsoleW(out, text, (DWORD)wcslen(text), &written, NULL);
+			}
+			return;
+		}
+#endif
+		hx::strbuf bytes;
+		const char *utf8 = data.utf8_str(&bytes);
+		if (utf8) fwrite(utf8, 1, strlen(utf8), stdout);
+	')
 	public static function writeStdout(data:String):Void {
 		Sys.print(data);
 	}
