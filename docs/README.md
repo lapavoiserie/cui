@@ -56,3 +56,17 @@ class MyApp extends App {
 - [Views](views/README.md) — Explore the 17 built-in views
 - [State](state/README.md) — Learn reactive state management
 - [Examples](examples/README.md) — Browse the 7 example apps
+
+## Native capabilities
+
+Reaching the battery, the clipboard or the keychain is not `cui`'s job — those
+live in [`kui`](https://lapavoiserie.github.io/kui/), keyed by operating system
+so one implementation serves every backend that builds for it.
+
+`cui` is the cheapest of the six to serve: hxcpp both compiles and links here,
+so a capability's `hxcpp` payload rides on `@:buildXml` and no project file has
+to learn anything. `cui.kui.Platform` answers from the machine doing the
+compiling, which is right for the ordinary build and overridden by
+`-D kui_platform` for a cross build.
+
+Verified on macOS, Windows and Linux with the same capability, unchanged.

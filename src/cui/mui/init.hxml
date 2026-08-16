@@ -7,9 +7,11 @@
 -cp src
 -lib mui
 -lib cui
+-lib kui
 -lib rui
 -lib nui
 -D mui_backend=cui
 --macro mui.macros.Bind.all()
+--macro cui.kui.Platform.registerWithKui()
 --main $MAIN
 -cpp build/cui

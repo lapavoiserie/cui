@@ -104,13 +104,34 @@ six and nothing above it knows there was a choice.
   `ReadFile`. The handle is signalled for records that produce no bytes at all
   (resize, focus, key-up), so those are peeked and discarded first; without
   that, resizing the window freezes the application.
-- **UTF-8**: `SetConsoleOutputCP(CP_UTF8)`, because output goes through
-  `Sys.print` and Haxe strings arrive as UTF-8. Without it the box-drawing
-  characters in a frame become mojibake.
+- **Output**: `WriteConsoleW`, bypassing the C runtime entirely. Falls back to
+  UTF-8 bytes on `stdout` when `GetConsoleMode` fails, which is how redirected
+  output and piped captures still work.
 
-Everything saved is restored on leaving raw mode, including the code page: a
-console mode outlives the process that changed it, so a crash-free exit that
-forgot to restore would leave the user's shell without echo.
+Everything saved is restored on leaving raw mode: a console mode outlives the
+process that changed it, so an exit that forgot to restore would leave the
+user's shell without echo.
+
+##### Why the output does not go through `Sys.print`
+
+This one was got wrong first, and the wrong version is worth stating because it
+is the version everybody writes.
+
+`Sys.print` reaches `printf`, so the obvious fix for mojibake is
+`SetConsoleOutputCP(CP_UTF8)` — and that fix does nothing here. MSVC's C runtime
+performs its **own** conversion once it notices it is writing to a console,
+using the runtime's locale rather than the console output code page. The call
+looks right, is right everywhere else, and is never consulted on this path: a
+`┌` (UTF-8 `E2 94 8C`) still arrives as `Ôöî`, its three bytes read as CP850.
+
+It was reported from a PowerShell window. It had not shown up earlier because
+every test until then had gone over ssh — where output crosses a ConPTY rather
+than a real console host — and because the application used for those tests
+printed nothing but ASCII, so it could not have shown this on any host.
+
+A Haxe string is already UTF-16 in hxcpp and `WriteConsoleW` takes UTF-16, so
+no code page is consulted by anyone and nothing global is mutated for whatever
+else shares the console.
 
 #### Why the choice is made at run time
 
