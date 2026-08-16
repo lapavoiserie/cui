@@ -78,12 +78,57 @@ The `Backend` interface abstracts platform-specific terminal operations:
 | `getSize()` | Terminal dimensions |
 | `pollEvent()` | Non-blocking input with timeout |
 
-### PosixTerminal (macOS/Linux)
+### Terminal — the six primitives underneath
 
-Uses C FFI via `@:headerCode` and `@:functionCode`:
+`AnsiBackend` speaks escape sequences, and it speaks the same ones everywhere.
+What differs by system is only how raw mode is entered, how the size is asked
+for and how a byte is waited for. `cui.backend.native.Terminal` dispatches those
+six and nothing above it knows there was a choice.
+
+**PosixTerminal** (macOS, Linux) uses C FFI via `@:headerCode` and
+`@:functionCode`:
 - **Raw mode**: `tcgetattr`/`tcsetattr` with termios
 - **Terminal size**: `ioctl(TIOCGWINSZ)`
 - **Non-blocking input**: `select()` with timeout + `read()`
+
+**WindowsTerminal** does the same against the console API:
+- **Raw mode**: `SetConsoleMode` — `ENABLE_VIRTUAL_TERMINAL_PROCESSING` on the
+  output handle so escape sequences are interpreted, and
+  `ENABLE_VIRTUAL_TERMINAL_INPUT` on the input handle so keys come back *as*
+  escape sequences. Both are needed and neither implies the other: enabling only
+  the first gives a screen that draws correctly and never responds. Line mode,
+  echo and signal processing are cleared, matching `ICANON`/`ECHO`/`ISIG`.
+- **Terminal size**: `GetConsoleScreenBufferInfo`, reading `srWindow` rather
+  than the buffer — a console buffer is usually far taller than the window.
+- **Non-blocking input**: `WaitForSingleObject` on the input handle, then
+  `ReadFile`. The handle is signalled for records that produce no bytes at all
+  (resize, focus, key-up), so those are peeked and discarded first; without
+  that, resizing the window freezes the application.
+- **UTF-8**: `SetConsoleOutputCP(CP_UTF8)`, because output goes through
+  `Sys.print` and Haxe strings arrive as UTF-8. Without it the box-drawing
+  characters in a frame become mojibake.
+
+Everything saved is restored on leaving raw mode, including the code page: a
+console mode outlives the process that changed it, so a crash-free exit that
+forgot to restore would leave the user's shell without echo.
+
+#### Why the choice is made at run time
+
+`#if windows` is the obvious answer and it is wrong twice. It does not work —
+Haxe defines no such thing, verified by compiling the same file on macOS and on
+Windows and printing which branch was taken: "not defined" on both. So the
+Windows branch would never have compiled *on Windows*, and the failure would
+have surfaced as a POSIX terminal that does not build.
+
+It is also the wrong shape: a compile-time switch answers for the machine doing
+the compiling, which stops being the right machine the moment anyone
+cross-compiles.
+
+So the branch that genuinely must be resolved before compiling — which system's
+headers exist — is left to the **C preprocessor**, which does know `_WIN32`.
+Each implementation guards its own native code, both compile everywhere, one of
+them to empty bodies. The branch that only matters at run time is taken at run
+time, by asking the system being run on.
 
 ### Input Parsing
 

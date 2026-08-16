@@ -3,6 +3,7 @@ package cui.backend.native;
 import cui.layout.Size;
 
 @:headerCode('
+#ifndef _WIN32
 #include <termios.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
@@ -11,9 +12,11 @@ import cui.layout.Size;
 
 static struct termios cui_orig_termios;
 static bool cui_raw_mode = false;
+#endif
 ')
 class PosixTerminal {
     @:functionCode('
+#ifndef _WIN32
         if (cui_raw_mode) return;
         tcgetattr(STDIN_FILENO, &cui_orig_termios);
         struct termios raw = cui_orig_termios;
@@ -25,28 +28,35 @@ class PosixTerminal {
         raw.c_cc[VTIME] = 0;
         tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
         cui_raw_mode = true;
+#endif
     ')
     public static function enableRawMode():Void {}
 
     @:functionCode('
+#ifndef _WIN32
         if (!cui_raw_mode) return;
         tcsetattr(STDIN_FILENO, TCSAFLUSH, &cui_orig_termios);
         cui_raw_mode = false;
+#endif
     ')
     public static function disableRawMode():Void {}
 
     @:functionCode('
+#ifndef _WIN32
         struct winsize ws;
         if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1) {
             return ::cui::layout::Size_obj::__new(80, 24);
         }
         return ::cui::layout::Size_obj::__new(ws.ws_col, ws.ws_row);
+#endif
+        return ::cui::layout::Size_obj::__new(80, 24);
     ')
     public static function getTermSize():Size {
         return new Size(80, 24);
     }
 
     @:functionCode('
+#ifndef _WIN32
         fd_set fds;
         struct timeval tv;
         FD_ZERO(&fds);
@@ -59,16 +69,21 @@ class PosixTerminal {
         int n = read(STDIN_FILENO, &c, 1);
         if (n <= 0) return -1;
         return (int)c;
+#endif
+        return -1;
     ')
     public static function readByte(timeoutMs:Int):Int {
         return -1;
     }
 
     @:functionCode('
+#ifndef _WIN32
         unsigned char c;
         int n = read(STDIN_FILENO, &c, 1);
         if (n <= 0) return -1;
         return (int)c;
+#endif
+        return -1;
     ')
     public static function readByteImmediate():Int {
         return -1;

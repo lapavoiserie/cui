@@ -4,7 +4,7 @@ import cui.layout.Size;
 import cui.event.Event;
 import cui.event.KeyEvent;
 import cui.event.MouseEvent;
-import cui.backend.native.PosixTerminal;
+import cui.backend.native.Terminal;
 
 class AnsiBackend implements Backend {
     var outputBuf:StringBuf;
@@ -14,56 +14,56 @@ class AnsiBackend implements Backend {
     }
 
     public function enterRawMode():Void {
-        PosixTerminal.enableRawMode();
+        Terminal.enableRawMode();
     }
 
     public function leaveRawMode():Void {
-        PosixTerminal.disableRawMode();
+        Terminal.disableRawMode();
     }
 
     public function enterAlternateScreen():Void {
-        PosixTerminal.writeStdout("\x1b[?1049h");
+        Terminal.writeStdout("\x1b[?1049h");
     }
 
     public function leaveAlternateScreen():Void {
-        PosixTerminal.writeStdout("\x1b[?1049l");
+        Terminal.writeStdout("\x1b[?1049l");
     }
 
     public function hideCursor():Void {
-        PosixTerminal.writeStdout("\x1b[?25l");
+        Terminal.writeStdout("\x1b[?25l");
     }
 
     public function showCursor():Void {
-        PosixTerminal.writeStdout("\x1b[?25h");
+        Terminal.writeStdout("\x1b[?25h");
     }
 
     public function moveCursor(x:Int, y:Int):Void {
-        PosixTerminal.writeStdout("\x1b[" + (y + 1) + ";" + (x + 1) + "H");
+        Terminal.writeStdout("\x1b[" + (y + 1) + ";" + (x + 1) + "H");
     }
 
     public function write(data:String):Void {
-        PosixTerminal.writeStdout(data);
+        Terminal.writeStdout(data);
     }
 
     public function flush():Void {
-        PosixTerminal.flushStdout();
+        Terminal.flushStdout();
     }
 
     public function getSize():Size {
-        return PosixTerminal.getTermSize();
+        return Terminal.getTermSize();
     }
 
     public function enableMouseCapture():Void {
         // Enable SGR mouse mode (1006) + any-event tracking (1003)
-        PosixTerminal.writeStdout("\x1b[?1000h\x1b[?1006h");
+        Terminal.writeStdout("\x1b[?1000h\x1b[?1006h");
     }
 
     public function disableMouseCapture():Void {
-        PosixTerminal.writeStdout("\x1b[?1006l\x1b[?1000l");
+        Terminal.writeStdout("\x1b[?1006l\x1b[?1000l");
     }
 
     public function pollEvent(timeoutMs:Int):Null<Event> {
-        var byte = PosixTerminal.readByte(timeoutMs);
+        var byte = Terminal.readByte(timeoutMs);
         if (byte < 0) return null;
         return parseInput(byte);
     }
@@ -109,7 +109,7 @@ class AnsiBackend implements Backend {
     }
 
     function parseEscape():Null<Event> {
-        var b2 = PosixTerminal.readByteImmediate();
+        var b2 = Terminal.readByteImmediate();
         if (b2 < 0) {
             return Event.Key(new KeyEvent(KeyCode.Escape));
         }
@@ -119,7 +119,7 @@ class AnsiBackend implements Backend {
         }
 
         if (b2 == 79) { // O — SS3 sequences (F1-F4)
-            var b3 = PosixTerminal.readByteImmediate();
+            var b3 = Terminal.readByteImmediate();
             return switch (b3) {
                 case 80: Event.Key(new KeyEvent(KeyCode.F(1)));
                 case 81: Event.Key(new KeyEvent(KeyCode.F(2)));
@@ -138,7 +138,7 @@ class AnsiBackend implements Backend {
     }
 
     function parseCsi():Null<Event> {
-        var b3 = PosixTerminal.readByteImmediate();
+        var b3 = Terminal.readByteImmediate();
         if (b3 < 0) return Event.Key(new KeyEvent(KeyCode.Escape));
 
         // SGR mouse: \x1b[< btn;col;row M/m
@@ -171,7 +171,7 @@ class AnsiBackend implements Backend {
         var current = 0;
 
         while (true) {
-            var b = PosixTerminal.readByteImmediate();
+            var b = Terminal.readByteImmediate();
             if (b < 0) return null;
 
             if (b >= 48 && b <= 57) {
@@ -218,7 +218,7 @@ class AnsiBackend implements Backend {
     function parseExtendedCsi(firstDigit:Int):Null<Event> {
         var num = firstDigit - 48;
         while (true) {
-            var b = PosixTerminal.readByteImmediate();
+            var b = Terminal.readByteImmediate();
             if (b < 0) break;
             if (b >= 48 && b <= 57) {
                 num = num * 10 + (b - 48);
@@ -255,7 +255,7 @@ class AnsiBackend implements Backend {
         else if ((firstByte & 0xF8) == 0xF0) remaining = 3;
 
         for (i in 0...remaining) {
-            var b = PosixTerminal.readByteImmediate();
+            var b = Terminal.readByteImmediate();
             if (b < 0) return null;
             bytes.push(b);
         }

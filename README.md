@@ -34,7 +34,7 @@ class MyApp extends App {
 - **Mouse support** — Click to focus, SGR mouse event parsing
 - **Diff-based rendering** — Virtual buffer with cell-level diffing; only changed cells hit the terminal
 - **Two-pass flex layout** — Compact children keep natural size, greedy children share remaining space equally
-- **Cross-platform** — POSIX backend (macOS/Linux) via termios C FFI; Windows planned
+- **Cross-platform** — macOS and Linux via termios, Windows via the console API; one ANSI backend over all three
 - **Native binaries** — Compiles to C++ via hxcpp
 
 ## Quick Start
