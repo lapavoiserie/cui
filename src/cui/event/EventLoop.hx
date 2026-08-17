@@ -42,6 +42,28 @@ class EventLoop {
         while (!shouldQuit) {
             var event = backend.pollEvent(16); // ~60fps
 
+            // Let Haxe's own scheduled work run. Without this a `haxe.Timer`
+            // created by an application never fires — silently: no error, no
+            // warning, just nothing happening, for ever. The entry point pumps
+            // it *after* main() returns, and an application that never returns
+            // from run() never gets there.
+            //
+            // Which loop to pump depends on the target, and getting it wrong
+            // looks identical to not pumping at all. On a threaded target -
+            // every hxcpp build - `haxe.Timer` uses the current **thread's**
+            // event loop (`#if (target.threaded && !cppia)` in haxe/Timer.hx),
+            // not `haxe.MainLoop`; on the others it is MainLoop. Both are
+            // pumped, because a wrong guess here costs an afternoon.
+            //
+            // Found by an example that watched the network on a one-second
+            // timer and reported no change at all while the link was taken
+            // down and brought back.
+            #if (target.threaded && !cppia)
+            sys.thread.Thread.current().events.progress();
+            #else
+            @:privateAccess haxe.MainLoop.tick();
+            #end
+
             // Check for resize
             var newSize = backend.getSize();
             if (newSize.width != size.width || newSize.height != size.height) {
