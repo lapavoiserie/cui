@@ -8,7 +8,7 @@
 ## Installation
 
 ```bash
-haxelib git cui https://github.com/pign/cui
+haxelib git cui https://github.com/lapavoiserie/cui
 ```
 
 ## Create a Project

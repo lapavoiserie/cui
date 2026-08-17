@@ -1,6 +1,6 @@
 # cui
 
-Declarative Terminal User Interface framework for Haxe, inspired by [sui](https://github.com/pign/sui).
+Declarative Terminal User Interface framework for Haxe, inspired by [sui](https://github.com/lapavoiserie/sui).
 
 Write TUI apps with the same declarative pattern as SwiftUI — composable views, chainable modifiers, and reactive state — but rendering to a terminal instead of native UI.
 
@@ -41,7 +41,7 @@ class MyApp extends App {
 
 ```bash
 # Install
-haxelib git cui https://github.com/pign/cui
+haxelib git cui https://github.com/lapavoiserie/cui
 
 # Create a project
 haxelib run cui init MyApp

@@ -1,6 +1,6 @@
 # cui
 
-**Declarative Terminal User Interface framework for Haxe**, inspired by [sui](https://github.com/pign/sui).
+**Declarative Terminal User Interface framework for Haxe**, inspired by [sui](https://github.com/lapavoiserie/sui).
 
 Write TUI apps with the same declarative pattern as SwiftUI — composable views, chainable modifiers, and reactive state — but rendering to a terminal instead of native UI.
 
