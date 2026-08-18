@@ -40,7 +40,14 @@ class App {
 
     public function run():Void {
         eventLoop.run(
-            () -> { lifetime.beginPass(); return body(); },
+            () -> {
+                // cui builds its tree eagerly, so it is complete the moment
+                // body() returns.
+                lifetime.beginPass();
+                var tree = body();
+                lifetime.endPass();
+                return tree;
+            },
             (event) -> handleEvent(event)
         );
 
