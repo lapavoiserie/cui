@@ -54,6 +54,38 @@ does not name, so an application can own the scroll offset and the tab
 selection. A terminal keeps neither for you. Code written against the contract
 still compiles; passing one is what you do when something else drives it.
 
+## Surfaces: Commands
+
+Of mui's surface roles, cui hosts exactly one beyond Primary: **Commands**. An
+application's `@:surface(Commands)` declaration becomes key bindings in the
+event dispatch, checked before the default `q`/`Ctrl+C` handlers:
+
+```haxe
+@:surface(Commands)
+function shortcuts():Array<Command> {
+    return [
+        new Command("New todo", focusNew).key("ctrl+n"),
+        new Command("Clear done", clearDone).key("k"),
+    ];
+}
+```
+
+Chords are `ctrl+`/`alt+`/`shift+` plus a character, or `enter`/`escape`/`tab`.
+Letters match case-insensitively; `shift` is honoured only when the chord names
+it, because a terminal usually encodes shift in the character itself. A chord
+cui does not understand is skipped with a logged word, once — the command stays
+declared, unbound. The command thunks are sampled fresh on each key event, so
+they are always current with `@:state`.
+
+**Bindings only, for now.** There is no overlay or status bar to *display* the
+declared commands, so a `Command` without a shortcut is declared but
+unreachable on this backend — the discoverability half of the role waits for
+an overlay. Every other role (`Glance`, `Preferences`, `Auxiliary`, …)
+degrades to a silent no-op here, by design: a terminal has no cover.
+
+Checked by `tests/mui-commands.sh`, which drives `handleEvent` with
+synthesized keys under the interpreter.
+
 ## See also
 
 - [Adding a backend](https://lapavoiserie.github.io/mui/#/adding-a-backend) — the
