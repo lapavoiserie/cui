@@ -1,5 +1,7 @@
 package cui.mui;
 
+import mui.surface.SurfaceDecl;
+
 
 /**
 	`cui`'s conformance for `mui.App`.
@@ -27,9 +29,24 @@ package cui.mui;
 	every application, by hand.
 **/
 @:muiOwnsMain
+@:autoBuild(mui.macros.Surfaces.build())
 class App extends cui.App {
     /** App title (informational on cui — terminal has no title bar). **/
     public var appTitle:String = "App";
+
+    /**
+        Every surface this application declares: Primary — `body()`, always —
+        plus whatever `@:surface` methods collected into `declaredSurfaces()`.
+        Override to declare past the sugar: `super.surfaces().concat([…])`.
+    **/
+    public function surfaces():Array<SurfaceDecl> {
+        return [SurfaceDecl.Tree(mui.surface.SurfaceRole.Primary, "body", () -> body())]
+            .concat(declaredSurfaces());
+    }
+
+    /** What `@:surface` declared. `mui.macros.Surfaces` overrides this on the
+        application; the default is the empty answer. **/
+    public function declaredSurfaces():Array<SurfaceDecl> return [];
 
     /** Default event handler: Ctrl+C and q to quit. Override for custom keys. **/
     override function handleEvent(event:cui.event.Event):Bool {
