@@ -31,6 +31,15 @@ import mui.surface.SurfaceDecl;
 @:muiOwnsMain
 @:autoBuild(mui.macros.Surfaces.build())
 class App extends cui.App {
+    public function new() {
+        super();
+        // The describer is the backend's business — only cui knows where a
+        // Checkbox keeps its binding — so the mui layer installs the hook
+        // here, the same layering as the other backend hooks. Every mui app
+        // sets the same static: idempotent by construction.
+        mui.surface.Describe.impl = v -> cui.nui.Describe.describe(cast v);
+    }
+
     /** App title (informational on cui — terminal has no title bar). **/
     public var appTitle:String = "App";
 

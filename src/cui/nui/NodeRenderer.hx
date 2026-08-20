@@ -71,12 +71,26 @@ class NodeRenderer {
 		}
 	}
 
-	/** A `PCallback` becomes the handler; anything else becomes a no-op. **/
+	/**
+		A callback of any shape becomes the click handler.
+
+		`PCallbackString` matters beyond convenience: an INFLATED tree — one
+		that crossed a process boundary through `nui.Snapshot` — carries every
+		action in that shape, because the wire kept the types in its table,
+		not on the props. A click has no live value to report, so it fires
+		with `""` and the far table's recorded shape does the rest. The other
+		typed shapes fire with their zero value for the same reason; anything
+		else stays a no-op.
+	**/
 	static function action(v:Null<PropValue>):Void->Void {
 		var r = PropValueTools.resolve(v);
 		if (r == null) return function() {};
 		return switch (r) {
 			case PCallback(fn): fn;
+			case PCallbackString(fn): function() fn("");
+			case PCallbackBool(fn): function() fn(true);
+			case PCallbackFloat(fn): function() fn(0);
+			case PCallbackInt(fn): function() fn(0);
 			case _: function() {};
 		}
 	}
