@@ -36,6 +36,10 @@ import mui.surface.SurfaceDecl;
 // (`@:surface(Role, optional)`) rather than degradation it never hears about.
 // Widen this the day a host lands, never to quiet a build.
 //
+// Companion is a statement of capability, not of appetite: it says this
+// backend installs a describer and *could* serve one. The networked corner
+// stays off until the build asks for it with -D mui_cafos.
+//
 // Commands are the key bindings; Companion rides the describer installed
 // below. A terminal has nowhere to put the others.
 @:hostedRoles(Commands, Companion)
