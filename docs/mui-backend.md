@@ -80,8 +80,13 @@ they are always current with `@:state`.
 **Bindings only, for now.** There is no overlay or status bar to *display* the
 declared commands, so a `Command` without a shortcut is declared but
 unreachable on this backend — the discoverability half of the role waits for
-an overlay. Every other role (`Glance`, `Preferences`, `Auxiliary`, …)
-degrades to a silent no-op here, by design: a terminal has no cover.
+an overlay. cui states what it hosts as `@:hostedRoles(Commands, Companion)` on
+`cui.mui.App`, and mui refuses every other role at compile time: declaring a
+`Glance` in a build targeting cui stops that build, naming both. A terminal
+has no cover, and an application that learns this from an empty screen
+learned it too late. An application built for several backends accepts the
+gap in its own source — `@:surface(Glance, optional)` — which keeps the
+declaration portable without keeping it quiet.
 
 Checked by `tests/mui-commands.sh`, which drives `handleEvent` with
 synthesized keys under the interpreter.
