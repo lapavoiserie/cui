@@ -52,7 +52,7 @@ class StateMacro {
             // from the default, and writes back to it. Wrapping the default
             // expression keeps this out of the constructor-ordering question
             // entirely; see rui.macros.DurableState.
-            var durable = rui.macros.DurableState.requestOf(field, stateMeta);
+            var durable = rui.macros.DurableState.requestOf(field, stateMeta, origType);
             if (durable != null)
                 defaultExpr = rui.macros.DurableState.hydrate(durable, defaultExpr);
 
