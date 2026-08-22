@@ -47,6 +47,16 @@ import mui.surface.SurfaceDecl;
 class App extends cui.App {
     public function new() {
         super();
+        // The durable store, before anything durable exists. This runs inside
+        // `super()` as far as the application's own class is concerned, so its
+        // `@:state(durable)` cells are constructed after it and are born from
+        // the store rather than corrected afterwards.
+        //
+        // A macro: it expands to nothing where the platform has no store
+        // implementation, so a build that asked for no durable cell does not
+        // fail for a capability it never used. That is not a silence — an
+        // application that *does* ask is refused at the field, by name.
+        mui.state.Durable.install();
         // The describer is the backend's business — only cui knows where a
         // Checkbox keeps its binding — so the mui layer installs the hook
         // here, the same layering as the other backend hooks. Every mui app

@@ -12,10 +12,12 @@ class StateMacro {
 
         for (field in fields) {
             var isState = false;
+            var stateMeta:Null<MetadataEntry> = null;
             if (field.meta != null) {
                 for (m in field.meta) {
                     if (m.name == ":state") {
                         isState = true;
+                        stateMeta = m;
                         break;
                     }
                 }
@@ -46,6 +48,14 @@ class StateMacro {
 
             var fieldName = field.name;
 
+            // `@:state(durable)` -- the cell is born from the store rather than
+            // from the default, and writes back to it. Wrapping the default
+            // expression keeps this out of the constructor-ordering question
+            // entirely; see rui.macros.DurableState.
+            var durable = rui.macros.DurableState.requestOf(field, stateMeta);
+            if (durable != null)
+                defaultExpr = rui.macros.DurableState.hydrate(durable, defaultExpr);
+
             // Choose specialized State class based on type
             var stateClassName = getStateClassName(origType);
             var stateType:ComplexType = TPath({
@@ -73,6 +83,8 @@ class StateMacro {
                 default: macro $i{fieldName} = new cui.state.State.State($defaultExpr, $nameExpr);
             };
             stateInits.push(initExpr);
+            if (durable != null)
+                stateInits.push(rui.macros.DurableState.bindCall(durable, macro this, fieldName, field.pos));
         }
 
         if (stateInits.length > 0) {
