@@ -164,10 +164,16 @@ class ViewSource implements NodeSource<View> {
 	}
 
 	public function invokeAction(n:View):Void {
-		if (Std.isOfType(n, cui.ui.Button)) {
-			var b:cui.ui.Button = cast n;
-			b.invoke();
-		}
+		// One gesture, one render. The handler may write several cells; an
+		// effect reading them should run once, when the gesture is over.
+		// State sinks are not delayed by this — `State.set` calls them
+		// directly — so nothing a person can see waits on the scope.
+		rui.Signal.Scheduler.batch(() -> {
+			if (Std.isOfType(n, cui.ui.Button)) {
+				var b:cui.ui.Button = cast n;
+				b.invoke();
+			}
+		});
 	}
 
 	/** Run an action by the identifier `actionId` handed out. **/
