@@ -34,7 +34,7 @@ A focusable text input field with cursor, bound to a string state via `Binding`.
 ```haxe
 @:state var name:String = "";
 
-new Input(Binding.from(name), "Enter your name")
+new Input(Binding.from(name_), "Enter your name")
     .border(Single)
 ```
 
@@ -65,7 +65,7 @@ Input requires a `Binding<String>` to write back to the parent's state:
 @:state var email:String = "";
 
 // Binding.from() creates a two-way binding from a State<String>
-new Input(Binding.from(email), "user@example.com")
+new Input(Binding.from(email_), "user@example.com")
 ```
 
 See [Binding](../state/binding.md) for details.
@@ -77,7 +77,7 @@ A focusable toggle with a label, bound to a boolean state via `CheckboxBinding`.
 ```haxe
 @:state var agreed:Bool = false;
 
-new Checkbox("I agree to the terms", CheckboxBinding.fromState(agreed))
+new Checkbox("I agree to the terms", CheckboxBinding.fromState(agreed_))
 ```
 
 **Constructor**: `new Checkbox(label:String, binding:CheckboxBinding)`
@@ -105,7 +105,7 @@ A horizontal slider rendered as a filled bar with a percentage label.
 ```haxe
 @:state var volume:Float = 0.5;
 
-new Slider(SliderBinding.fromState(volume), 0.0, 1.0)
+new Slider(SliderBinding.fromState(volume_), 0.0, 1.0)
 ```
 
 Renders as:

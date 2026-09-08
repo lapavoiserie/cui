@@ -11,7 +11,7 @@ new Tabs([
     { label: "Overview", content: overviewView() },
     { label: "Details",  content: detailsView() },
     { label: "Settings", content: settingsView() },
-], TabSelection.fromState(activeTab))
+], TabSelection.fromState(activeTab_))
     .border(Single)
 ```
 
@@ -48,7 +48,7 @@ Like ListView, the active tab index is managed externally:
 
 ```haxe
 @:state var activeTab:Int = 0;
-var selection = TabSelection.fromState(activeTab);
+var selection = TabSelection.fromState(activeTab_);
 new Tabs(tabItems, selection)
 ```
 

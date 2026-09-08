@@ -40,7 +40,7 @@ Use Haxe string interpolation to display state values:
 ```haxe
 @:state var count:Int = 0;
 
-new Text('Count: ${count.get()}')
+new Text('Count: $count')
 ```
 
 The text updates automatically when the state changes because `body()` is called on every re-render.

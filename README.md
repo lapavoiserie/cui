@@ -10,10 +10,10 @@ class MyApp extends App {
 
     override public function body():View {
         return new VStack([
-            new Text('Count: ${count.get()}').bold(),
+            new Text('Count: $count').bold(),
             new HStack([
-                new Button("+", () -> count.inc()),
-                new Button("-", () -> count.dec()),
+                new Button("+", () -> count++),
+                new Button("-", () -> count--),
             ], 1),
         ]).padding(1).border(Rounded);
     }
@@ -101,7 +101,7 @@ class MyApp extends App {
 }
 ```
 
-Read with `.get()`, write with `.set()` or type-specific methods. The UI automatically re-renders when state changes.
+Read the field, assign to it to write — `count++` is a write. The UI automatically re-renders when state changes.
 
 For shared state across components, extend `Observable`:
 
@@ -118,7 +118,7 @@ Pass state to child views with `Binding`:
 ```haxe
 @:state var searchText:String = "";
 
-new Input(Binding.from(searchText), "Search...")
+new Input(Binding.from(searchText_), "Search...")
 ```
 
 ListView uses `ListSelection`, Tabs uses `TabSelection`, Checkbox uses `CheckboxBinding`.

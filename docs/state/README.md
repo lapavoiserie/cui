@@ -9,8 +9,7 @@ class MyApp extends App {
     @:state var count:Int = 0;
 
     override public function body():View {
-        return new Text('Count: ${count.get()}');
-        // count.value also works: new Text('Count: ${count.value}')
+        return new Text('Count: $count');
     }
 }
 ```
@@ -18,7 +17,7 @@ class MyApp extends App {
 ### How It Works
 
 1. `@:state` fields are transformed at compile time by `StateMacro` into `State<T>` wrappers
-2. When you call `.set()`, `.inc()`, or any mutation, a global dirty flag is set
+2. When you write the field — `count = 1`, `count++` — a global dirty flag is set
 3. The event loop detects the dirty flag and calls `body()` again
 4. The new view tree is rendered into a buffer and diffed against the previous frame
 5. Only changed cells are written to the terminal
@@ -35,7 +34,7 @@ This is an **immediate-mode** approach — `body()` is a pure function of state,
 | `String` | `StringState` | `.append()`, `.clear()` |
 | Other | `State<T>` | (base methods only) |
 
-All state types share: `.get()`, `.set(value)`, `.value` (get/set property), `.name` (read-only), `.setTo(value)`, `.toString()`
+The field itself is a property: `count` reads, `count = v` writes. The cell behind it, `count_`, shares across all state types: `.get()`, `.set(value)`, `.value`, `.peek()`, `.name` (read-only), `.setTo(value)`, `.toString()`
 
 ## What backs it
 
@@ -46,7 +45,7 @@ effects, it redraws from a dirty flag, which a write now raises through the shar
 
 Two consequences worth knowing:
 
-- **A write with an unchanged value is a no-op.** `count.set(5)` when `count` is already
+- **A write with an unchanged value is a no-op.** `count = 5` when `count` is already
   `5` no longer schedules a redraw. Nothing is lost — there was nothing to draw.
 - **`.applyExternal(value)`** writes without raising the dirty flag, for a value that came
   *from* the display and is therefore already on screen.

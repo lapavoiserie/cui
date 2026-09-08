@@ -11,7 +11,7 @@ A scrollable list with keyboard selection and optional scroll indicator.
 
 new ListView(
     items,
-    ListSelection.fromState(selectedIdx),
+    ListSelection.fromState(selectedIdx_),
     (idx) -> onSelect(idx),   // onSelect callback
     (idx) -> onDelete(idx)    // onDelete callback
 ).border(Single)
@@ -43,7 +43,7 @@ Selection is managed externally via `ListSelection` to survive re-renders:
 
 ```haxe
 @:state var idx:Int = 0;
-var selection = ListSelection.fromState(idx);
+var selection = ListSelection.fromState(idx_);
 new ListView(items, selection)
 ```
 

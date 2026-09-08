@@ -12,10 +12,10 @@ class MyApp extends App {
 
     override public function body():View {
         return new VStack([
-            new Text('Count: ${count.get()}').bold(),
+            new Text('Count: $count').bold(),
             new HStack([
-                new Button("+", () -> count.inc()),
-                new Button("-", () -> count.dec()),
+                new Button("+", () -> count++),
+                new Button("-", () -> count--),
             ], 1),
         ]).padding(1).border(Rounded);
     }

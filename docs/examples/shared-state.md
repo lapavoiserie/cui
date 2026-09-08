@@ -24,9 +24,9 @@ class CartSummary extends ViewComponent {
     override public function body():View {
         return new VStack([
             new Text("Cart Summary").bold().foregroundColor(Color.Named(NamedColor.Cyan)),
-            new Text('Items: ${cart.itemCount.get()}'),
-            new Text('Total: ${cart.total.get()}'),
-            new ProgressBar(Math.min(1.0, cart.total.get() / 100.0), "Budget"),
+            new Text('Items: ${cart.itemCount}'),
+            new Text('Total: ${cart.total}'),
+            new ProgressBar(Math.min(1.0, cart.total / 100.0), "Budget"),
         ], 0).padding(1).border(Single);
     }
 }
@@ -45,15 +45,15 @@ class ProductList extends ViewComponent {
             new Text("Products").bold().foregroundColor(Color.Named(NamedColor.Green)),
             new HStack([
                 new Button("Coffee $4.50", () -> {
-                    cart.itemCount.inc();
-                    cart.total.set(cart.total.get() + 4.50);
+                    cart.itemCount++;
+                    cart.total = cart.total + 4.50;
                 }),
                 new Button("Sandwich $8.00", () -> { ... }),
                 new Button("Juice $3.25", () -> { ... }),
             ], 1),
             new Button("Clear Cart", () -> {
-                cart.itemCount.set(0);
-                cart.total.set(0.0);
+                cart.itemCount = 0;
+                cart.total = 0.0;
             }),
         ], 1).padding(1).border(Single);
     }
@@ -83,7 +83,7 @@ class SharedStateApp extends App {
 
 ### Reactive Updates
 
-When `ProductList` calls `cart.itemCount.inc()`, the dirty flag is set. The event loop re-renders the entire UI, and `CartSummary` reads the updated value via `cart.itemCount.get()`.
+When `ProductList` calls `cart.itemCount++`, the dirty flag is set. The event loop re-renders the entire UI, and `CartSummary` reads the updated value via `cart.itemCount`.
 
 ### ViewComponent
 

@@ -16,7 +16,7 @@ class TodoApp extends App {
     }
 
     override public function body():View {
-        var selection = ListSelection.fromState(selectedIdx);
+        var selection = ListSelection.fromState(selectedIdx_);
 
         return new VStack([
             new Text("CUI Todo App").bold().foregroundColor(Color.Named(NamedColor.Cyan)),
@@ -25,26 +25,26 @@ class TodoApp extends App {
             cast(new ListView(todos, selection, null, (idx) -> {
                 if (idx >= 0 && idx < todos.length) {
                     todos.splice(idx, 1);
-                    if (selectedIdx.get() >= todos.length && todos.length > 0)
-                        selectedIdx.set(todos.length - 1);
+                    if (selectedIdx >= todos.length && todos.length > 0)
+                        selectedIdx = todos.length - 1;
                     StateBase.markDirty();
                 }
             }), View).border(Single).foregroundColor(Color.Named(NamedColor.White)),
             new Spacer(),
             new HStack([
                 new Text("New: ").foregroundColor(Color.Named(NamedColor.Yellow)),
-                new Input(Binding.from(inputText), "Enter a todo...").border(Single),
+                new Input(Binding.from(inputText_), "Enter a todo...").border(Single),
             ], 0),
             new HStack([
                 new Spacer(),
                 new Button("Add", () -> {
-                    var text = inputText.get();
-                    if (text.length > 0) { todos.push(text); inputText.set(""); }
+                    var text = inputText;
+                    if (text.length > 0) { todos.push(text); inputText = ""; }
                 }),
                 new Spacer(),
                 new Button("Clear All", () -> {
                     todos.splice(0, todos.length);
-                    selectedIdx.set(0);
+                    selectedIdx = 0;
                     StateBase.markDirty();
                 }),
                 new Spacer(),
@@ -59,12 +59,12 @@ class TodoApp extends App {
 
 ### Non-State Data + markDirty()
 
-`todos` is a regular `Array<String>`, not `@:state`. After mutating it (splice, push), we call `StateBase.markDirty()` to trigger a re-render. Alternatively, mutating any `@:state` field (like `inputText.set("")`) also triggers a re-render.
+`todos` is a regular `Array<String>`, not `@:state`. After mutating it (splice, push), we call `StateBase.markDirty()` to trigger a re-render. Alternatively, mutating any `@:state` field (like `inputText = ""`) also triggers a re-render.
 
 ### ListView + ListSelection
 
 ```haxe
-var selection = ListSelection.fromState(selectedIdx);
+var selection = ListSelection.fromState(selectedIdx_);
 new ListView(todos, selection, null, onDelete)
 ```
 

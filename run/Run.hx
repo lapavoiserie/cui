@@ -117,7 +117,7 @@ class $appName extends App {
                 .bold()
                 .foregroundColor(Color.Named(NamedColor.Cyan)),
             new Spacer(),
-            new Text(\'Count: $${count.get()}\')
+            new Text(\'Count: $$count\')
                 .bold(),
             new Spacer(),
             new Text("+/-: change count | q: quit")

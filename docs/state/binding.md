@@ -9,7 +9,7 @@ Used by `Input` to write text back to the parent's state.
 ```haxe
 @:state var name:String = "";
 
-new Input(Binding.from(name), "Enter name")
+new Input(Binding.from(name_), "Enter name")
 ```
 
 ### Creating Bindings
@@ -32,7 +32,7 @@ Used by `Checkbox` to toggle a boolean state.
 ```haxe
 @:state var agreed:Bool = false;
 
-new Checkbox("I agree", CheckboxBinding.fromState(agreed))
+new Checkbox("I agree", CheckboxBinding.fromState(agreed_))
 ```
 
 ### Creating CheckboxBindings
@@ -55,7 +55,7 @@ Used by `ListView` to track the selected index.
 ```haxe
 @:state var idx:Int = 0;
 
-new ListView(items, ListSelection.fromState(idx))
+new ListView(items, ListSelection.fromState(idx_))
 ```
 
 ### Why External Selection?
@@ -82,7 +82,7 @@ Used by `Tabs` to track the active tab index.
 ```haxe
 @:state var activeTab:Int = 0;
 
-new Tabs(tabItems, TabSelection.fromState(activeTab))
+new Tabs(tabItems, TabSelection.fromState(activeTab_))
 ```
 
 ### Creating TabSelections

@@ -54,16 +54,16 @@ class NuiTreeApp extends App {
 		var buttons = new Node("HStack")
 			.prop("spacing", PInt(2))
 			.child(button("Alpha", function() {
-				pressesA.set(pressesA.get() + 1);
-				lastPressed.set("Alpha");
+				pressesA = pressesA + 1;
+				lastPressed = "Alpha";
 			}))
 			.child(button("Bravo", function() {
-				pressesB.set(pressesB.get() + 1);
-				lastPressed.set("Bravo");
+				pressesB = pressesB + 1;
+				lastPressed = "Bravo";
 			}))
 			.child(button("Charlie", function() {
-				pressesC.set(pressesC.get() + 1);
-				lastPressed.set("Charlie");
+				pressesC = pressesC + 1;
+				lastPressed = "Charlie";
 			}));
 
 		var unknown = new Node("Hologramme");
@@ -95,10 +95,10 @@ class NuiTreeApp extends App {
 			rendered,
 			new Text("relu par ViewSource : " + described),
 			new Text("Tab / Maj-Tab pour circuler · Entrée pour actionner · q pour quitter"),
-			new Text("dernier : " + lastPressed.get()
-				+ "   ·   Alpha " + pressesA.get()
-				+ " · Bravo " + pressesB.get()
-				+ " · Charlie " + pressesC.get())
+			new Text("dernier : " + lastPressed
+				+ "   ·   Alpha " + pressesA
+				+ " · Bravo " + pressesB
+				+ " · Charlie " + pressesC)
 		], 1);
 	}
 

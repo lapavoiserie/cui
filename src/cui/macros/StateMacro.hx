@@ -65,26 +65,36 @@ class StateMacro {
                 params: stateClassName == "State" ? [TPType(origType)] : [],
             });
 
-            newFields.push({
-                name: field.name,
-                access: field.access,
-                kind: FVar(stateType, null),
-                pos: field.pos,
-                meta: field.meta,
-                doc: field.doc,
-            });
+            
+            // The field becomes a property over a cell named `count_` -- see
 
+            
+            // rui.macros.StateProperty. The specialised State subclass is the
+
+            
+            // cell's type; the registry name stays the field's own.
+
+            
+            var cell = rui.macros.StateProperty.cellName(fieldName);
+
+            
+            for (f in rui.macros.StateProperty.split(field, origType, stateType))
+
+            
+                newFields.push(f);
+
+            
             var nameExpr = macro $v{fieldName};
             var initExpr = switch (stateClassName) {
-                case "IntState": macro $i{fieldName} = new cui.state.State.IntState($defaultExpr, $nameExpr);
-                case "BoolState": macro $i{fieldName} = new cui.state.State.BoolState($defaultExpr, $nameExpr);
-                case "FloatState": macro $i{fieldName} = new cui.state.State.FloatState($defaultExpr, $nameExpr);
-                case "StringState": macro $i{fieldName} = new cui.state.State.StringState($defaultExpr, $nameExpr);
-                default: macro $i{fieldName} = new cui.state.State.State($defaultExpr, $nameExpr);
+                case "IntState": macro $i{cell} = new cui.state.State.IntState($defaultExpr, $nameExpr);
+                case "BoolState": macro $i{cell} = new cui.state.State.BoolState($defaultExpr, $nameExpr);
+                case "FloatState": macro $i{cell} = new cui.state.State.FloatState($defaultExpr, $nameExpr);
+                case "StringState": macro $i{cell} = new cui.state.State.StringState($defaultExpr, $nameExpr);
+                default: macro $i{cell} = new cui.state.State.State($defaultExpr, $nameExpr);
             };
             stateInits.push(initExpr);
             if (durable != null)
-                stateInits.push(rui.macros.DurableState.bindCall(durable, macro this, fieldName, field.pos));
+                stateInits.push(rui.macros.DurableState.bindCall(durable, macro this, cell, field.pos));
         }
 
         if (stateInits.length > 0) {

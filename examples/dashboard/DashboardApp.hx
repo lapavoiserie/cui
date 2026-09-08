@@ -32,7 +32,7 @@ class DashboardApp extends App {
                 { label: "Overview", content: overviewTab() },
                 { label: "Services", content: servicesTab() },
                 { label: "Logs", content: logsTab() },
-            ], TabSelection.fromState(activeTab)), View)
+            ], TabSelection.fromState(activeTab_)), View)
                 .border(Single),
         ], 0).padding(1).border(Rounded);
     }
@@ -98,7 +98,7 @@ class DashboardApp extends App {
 
         return cast(new ListView(
             logs,
-            ListSelection.fromState(logIdx)
+            ListSelection.fromState(logIdx_)
         ), View).foregroundColor(Color.Named(NamedColor.White));
     }
 

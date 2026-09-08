@@ -56,11 +56,11 @@ class TogglePanel extends ViewComponent {
     }
 
     override public function body():View {
-        var arrow = expanded.get() ? "\u25BC" : "\u25B6";
+        var arrow = expanded ? "\u25BC" : "\u25B6";
         var views:Array<View> = [
-            new Button('$arrow $title', () -> expanded.toggle()),
+            new Button('$arrow $title', () -> expanded = !expanded),
         ];
-        if (expanded.get()) {
+        if (expanded) {
             views.push(content);
         }
         return new VStack(views, 0);

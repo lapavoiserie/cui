@@ -25,12 +25,12 @@ class CounterApp extends App {
                 .bold()
                 .foregroundColor(Color.Named(NamedColor.Cyan)),
             new Spacer(),
-            new Text('Count: ${count.get()}')
+            new Text('Count: $count')
                 .bold()
                 .foregroundColor(
-                    count.get() > 0
+                    count > 0
                         ? Color.Named(NamedColor.Green)
-                        : (count.get() < 0 ? Color.Named(NamedColor.Red) : Color.Default)
+                        : (count < 0 ? Color.Named(NamedColor.Red) : Color.Default)
                 ),
             new Spacer(),
             new HStack([
@@ -51,9 +51,9 @@ class CounterApp extends App {
             case Key(key):
                 switch (key.code) {
                     case Char(c):
-                        if (c == "+" || c == "=") { count.inc(); return true; }
-                        if (c == "-") { count.dec(); return true; }
-                        if (c == "r") { count.setTo(0); return true; }
+                        if (c == "+" || c == "=") { count++; return true; }
+                        if (c == "-") { count--; return true; }
+                        if (c == "r") { count = 0; return true; }
                         if (c == "q") { quit(); return true; }
                     default:
                 }
@@ -77,7 +77,7 @@ class CounterApp extends App {
 @:state var count:Int = 0;
 ```
 
-The `StateMacro` transforms this into an `IntState` field at compile time. This gives you `.get()`, `.set()`, `.inc()`, `.dec()`, and `.setTo()`.
+The `StateMacro` turns this into an `IntState` cell, `count_`, and a property `count` over it at compile time. `count` reads and `count = …` writes; `count_.inc()`, `count_.dec()` and `count_.setTo()` are the cell's own.
 
 ### Reactive Color
 

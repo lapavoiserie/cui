@@ -36,7 +36,7 @@ class DescribeCheck extends App {
 		return new VStack([
 			new Text("hello"),
 			new Button("Go", () -> taps.push("go")),
-			new Toggle("Lamp", (lit : ToggleBinding)),
+			new Toggle("Lamp", (lit_ : ToggleBinding)),
 		], 8);
 	}
 
@@ -74,7 +74,7 @@ class DescribeCheck extends App {
 			case PCallbackBool(fn): fn(true);
 			case _:
 		}
-		check("a described binding writes back to the state", app.lit.get() == true);
+		check("a described binding writes back to the state", app.lit == true);
 
 		// --- The pipe: project -> wire -> inflate -> render -> fire ---
 		var table = new nui.Snapshot.ActionTable();

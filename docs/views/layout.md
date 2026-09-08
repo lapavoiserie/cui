@@ -91,7 +91,7 @@ Wraps content that may exceed the available space, providing vertical scrolling 
 
 new ScrollView(
     new VStack(longContent, 0),
-    ScrollOffset.fromState(scrollPos)
+    ScrollOffset.fromState(scrollPos_)
 ).border(Single)
 ```
 

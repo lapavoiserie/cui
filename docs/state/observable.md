@@ -29,7 +29,7 @@ class CartSummary extends ViewComponent {
     }
 
     override public function body():View {
-        return new Text('Items: ${cart.itemCount.get()}');
+        return new Text('Items: ${cart.itemCount}');
     }
 }
 
@@ -43,8 +43,8 @@ class ProductButton extends ViewComponent {
 
     override public function body():View {
         return new Button("Add Item", () -> {
-            cart.itemCount.inc();
-            cart.total.set(cart.total.get() + 9.99);
+            cart.itemCount++;
+            cart.total = cart.total + 9.99;
         });
     }
 }
@@ -69,7 +69,7 @@ Then access from anywhere:
 
 ```haxe
 var state = AppState.instance;
-new Text('Hello, ${state.username.get()}');
+new Text('Hello, ${state.username}');
 ```
 
 ## vs @:state on App

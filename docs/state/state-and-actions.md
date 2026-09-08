@@ -19,11 +19,11 @@ The `StateMacro` transforms these at compile time:
 
 ## Reading State
 
-Use `.get()` or `.value` to read the current value:
+Read the field to read the current value — it is a property over the cell, and the read subscribes:
 
 ```haxe
-new Text('Count: ${count.get()}')
-new Text('Count: ${count.value}')   // equivalent
+new Text('Count: $count')
+new Text('Count: $count')   // equivalent
 ```
 
 In string interpolation, `.toString()` is called automatically:
@@ -43,17 +43,17 @@ trace(count.name);  // "count"
 ### Common Methods (all types)
 
 ```haxe
-count.set(42);       // set to a specific value
-count.value = 42;    // equivalent — the .value property is read/write
-count.setTo(42);     // same as set, but returns the State for chaining
+count = 42;       // set to a specific value
+count = 42;    // the write notifies
+count = 42;     // same as set, but returns the State for chaining
 ```
 
 ### IntState
 
 ```haxe
-count.inc();         // increment by 1
+count++;         // increment by 1
 count.inc(5);        // increment by 5
-count.dec();         // decrement by 1
+count--;         // decrement by 1
 count.dec(3);        // decrement by 3
 ```
 
@@ -67,7 +67,7 @@ progress.dec(0.05);  // decrement by 0.05
 ### BoolState
 
 ```haxe
-active.toggle();     // flip true/false
+active = !active;     // flip true/false
 ```
 
 ### StringState
@@ -87,7 +87,7 @@ override public function handleEvent(event:Event):Bool {
         case Key(key):
             switch (key.code) {
                 case Char(c):
-                    if (c == "+") { count.inc(); return true; }
+                    if (c == "+") { count++; return true; }
                 default:
             }
         default:
@@ -99,10 +99,10 @@ override public function handleEvent(event:Event):Bool {
 Or in button/checkbox callbacks:
 
 ```haxe
-new Button("Reset", () -> count.set(0))
+new Button("Reset", () -> count = 0)
 ```
 
-After any `.set()`, `.inc()`, `.toggle()`, etc., the UI automatically re-renders.
+After any write — `count = 1`, `count++`, `dark = !dark`, or `count_.inc()` on the cell — the UI automatically re-renders.
 
 ## Non-State Data
 

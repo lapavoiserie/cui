@@ -22,18 +22,18 @@ class FormApp extends App {
     @:state var submitted:Bool = false;
 
     override public function body():View {
-        if (submitted.get()) {
+        if (submitted) {
             return new VStack([
                 new Text("Form Submitted!")
                     .bold()
                     .foregroundColor(Color.Named(NamedColor.Green)),
                 new Spacer(),
-                new Text('Name:       ${name.get()}'),
-                new Text('Email:      ${email.get()}'),
-                new Text('Newsletter: ${newsletter.get() ? "Yes" : "No"}'),
-                new Text('Terms:      ${terms.get() ? "Accepted" : "Not accepted"}'),
+                new Text('Name:       $name'),
+                new Text('Email:      $email'),
+                new Text('Newsletter: ${newsletter ? "Yes" : "No"}'),
+                new Text('Terms:      ${terms ? "Accepted" : "Not accepted"}'),
                 new Spacer(),
-                new Button("Back", () -> submitted.set(false)),
+                new Button("Back", () -> submitted = false),
             ], 1).padding(1).border(Rounded);
         }
 
@@ -46,27 +46,27 @@ class FormApp extends App {
             new Spacer(),
             new HStack([
                 new Text("Name:  ").foregroundColor(Color.Named(NamedColor.Yellow)),
-                new Input(Binding.from(name), "Enter your name")
+                new Input(Binding.from(name_), "Enter your name")
                     .border(Single),
             ], 0),
             new HStack([
                 new Text("Email: ").foregroundColor(Color.Named(NamedColor.Yellow)),
-                new Input(Binding.from(email), "Enter your email")
+                new Input(Binding.from(email_), "Enter your email")
                     .border(Single),
             ], 0),
             new Spacer(),
-            new Checkbox("Subscribe to newsletter", CheckboxBinding.fromState(newsletter)),
-            new Checkbox("I accept the terms", CheckboxBinding.fromState(terms)),
+            new Checkbox("Subscribe to newsletter", CheckboxBinding.fromState(newsletter_)),
+            new Checkbox("I accept the terms", CheckboxBinding.fromState(terms_)),
             new Spacer(),
             new HStack([
                 new Spacer(),
-                new Button("Submit", () -> submitted.set(true)),
+                new Button("Submit", () -> submitted = true),
                 new Spacer(),
                 new Button("Clear", () -> {
-                    name.set("");
-                    email.set("");
-                    newsletter.set(true);
-                    terms.set(false);
+                    name = "";
+                    email = "";
+                    newsletter = true;
+                    terms = false;
                 }),
                 new Spacer(),
             ], 1),
