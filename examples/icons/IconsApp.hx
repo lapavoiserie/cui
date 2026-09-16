@@ -3,6 +3,7 @@ import cui.View;
 import cui.ui.Button;
 import cui.ui.HStack;
 import cui.ui.Icon;
+import cui.ui.Picker;
 import cui.ui.Image;
 import cui.ui.Text;
 import cui.ui.VStack;
@@ -27,6 +28,12 @@ import cui.ui.VStack;
 	its `alt`.
 **/
 class IconsApp extends App {
+	@:state var transition:Int = 1;
+	@:state var preview:Int = 0;
+	@:state var audio:Int = 0;
+	@:state var rate:Int = 1;
+	@:state var bare:Int = 0;
+
 	override public function body():View {
 		var rows:Array<View> = [new Text("Icons").bold()];
 		var names = nui.Icons.NAMES;
@@ -54,7 +61,23 @@ class IconsApp extends App {
 			new Button("", () -> {}, "mic-off"),
 			new Button("Plain", () -> {}),
 		], 2));
-		rows.push(new Text("[q] quit").dim());
+		rows.push(new Text(""));
+		rows.push(new Text("Pickers").bold());
+		// Several, because one picker says nothing about how a row of them
+		// reads: each keeps the width of its own longest option, so the
+		// columns do not line up -- and each has its own focus.
+		rows.push(new HStack([
+			new Picker("Transition", ["Cut", "Mix", "Wipe", "Stinger"],
+				PickerBinding.fromState(transition_)),
+			new Picker("Preview", ["CAM 1", "CAM 2", "CAM 3", "VTR", "GFX"],
+				PickerBinding.fromState(preview_)),
+		], 3));
+		rows.push(new HStack([
+			new Picker("Audio", ["Follow", "Manual"], PickerBinding.fromState(audio_)),
+			new Picker("Rate", ["0.5 s", "1 s", "2 s"], PickerBinding.fromState(rate_)),
+			new Picker("", ["labelless"], PickerBinding.fromState(bare_)),
+		], 3));
+		rows.push(new Text("[tab] focus  [left/right] choose  [q] quit").dim());
 		return new VStack(rows, 0).padding(1).border(Rounded);
 	}
 
