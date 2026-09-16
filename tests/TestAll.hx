@@ -455,6 +455,53 @@ class TestAll {
         assert((cast kids[2] : cui.ui.Button).icon == "forward", "a received button keeps its icon");
     }
 
+    // --- How a text is set ---
+
+    static function testTextStyle():Void {
+        section("Text styling");
+
+        var heading = new cui.ui.Text("Sources").styled("title");
+        var counter = new cui.ui.Text("00:12:34").styled("body", "Inter", 700, true, true);
+        var plain = new cui.ui.Text("plain");
+
+        // What a terminal can draw, it draws: a cell is one size, so a heading
+        // is heavier rather than larger.
+        var buf = new Buffer(20, 1);
+        heading.render(buf, new Rect(0, 0, 20, 1));
+        assert(buf.get(0, 0).style.bold, "a heading is bold, a cell being one size");
+        var counterCells = new Buffer(20, 1);
+        counter.render(counterCells, new Rect(0, 0, 20, 1));
+        assert(counterCells.get(0, 0).style.bold && counterCells.get(0, 0).style.italic,
+            "a weight past six hundred is bold, and italic is italic");
+        var plainCells = new Buffer(20, 1);
+        plain.render(plainCells, new Rect(0, 0, 20, 1));
+        assert(!plainCells.get(0, 0).style.bold, "and text that said nothing is neither");
+
+        // What it cannot draw, it carries: a described tree says what it was
+        // given, whatever this screen can show of it.
+        var described = cui.nui.Describe.describe(new VStack([heading, counter]));
+        var first = described.children[0];
+        var second = described.children[1];
+        assert(nui.PropValue.PropValueTools.asString(first.props.get("scale")) == "title",
+            "a heading crosses as a heading");
+        assert(nui.PropValue.PropValueTools.asString(second.props.get("family")) == "Inter"
+            && nui.PropValue.PropValueTools.asInt(second.props.get("weight")) == 700
+            && nui.PropValue.PropValueTools.asBool(second.props.get("italic"))
+            && nui.PropValue.PropValueTools.asString(second.props.get("numbers")) == "tabular",
+            "and a family a terminal has no use for crosses with the rest");
+
+        var built = NodeRenderer.build(new nui.Node("VStack")
+            .child(new nui.Node("Text").prop("text", PString("Sources")).prop("scale", PString("subtitle")))
+            .child(new nui.Node("Text").prop("text", PString("plain"))));
+        var kids:Array<View> = built.children;
+        var receivedHeading = new Buffer(20, 1);
+        kids[0].render(receivedHeading, new Rect(0, 0, 20, 1));
+        assert(receivedHeading.get(0, 0).style.bold, "a received heading is set as one, which it was not before the canon");
+        var receivedPlain = new Buffer(20, 1);
+        kids[1].render(receivedPlain, new Rect(0, 0, 20, 1));
+        assert(!receivedPlain.get(0, 0).style.bold, "and received running text is left alone");
+    }
+
     // --- Pictures in a terminal ---
 
     /** The 4x3 picture of `tests/`: primary colours, one transparent pixel. **/
@@ -663,6 +710,7 @@ class TestAll {
         testBoxBorder();
         testState();
         testTypedStates();
+        testTextStyle();
         testIconsAndPictures();
         testPictures();
         testNuiSource();

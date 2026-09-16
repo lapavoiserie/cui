@@ -105,7 +105,16 @@ class Describe {
 
 		// Most-derived first: ZStack and SafeArea extend VStack, the mui
 		// facades extend the widgets. Order is the correctness here.
-		if (Std.isOfType(view, cui.ui.Icon)) {
+		if (Std.isOfType(view, cui.ui.Text)) {
+			var t:cui.ui.Text = cast view;
+			out = new Node("Text").prop("text", PString(t.content));
+			if (t.scale != null) out.prop("scale", PString(t.scale));
+			if (t.family != null) out.prop("family", PString(t.family));
+			if (t.weight != null) out.prop("weight", PInt(t.weight));
+			if (t.slanted == true) out.prop("italic", PBool(true));
+			if (t.tabular) out.prop("numbers", PString(nui.TextStyle.TABULAR));
+
+		} else if (Std.isOfType(view, cui.ui.Icon)) {
 			var i:cui.ui.Icon = cast view;
 			out = new Node("Icon").prop("name", PString(i.name));
 			if (i.label != null && i.label != "") out.prop("label", PString(i.label));
@@ -116,10 +125,6 @@ class Describe {
 			if (p.drawWidth != null) out.prop("width", PFloat(p.drawWidth));
 			if (p.drawHeight != null) out.prop("height", PFloat(p.drawHeight));
 			if (p.fit != "contain") out.prop("fit", PString(p.fit));
-
-		} else if (Std.isOfType(view, cui.ui.Text)) {
-			var t:cui.ui.Text = cast view;
-			out = new Node("Text").prop("text", PString(t.content));
 
 		} else if (Std.isOfType(view, cui.ui.Button)) {
 			var b:cui.ui.Button = cast view;

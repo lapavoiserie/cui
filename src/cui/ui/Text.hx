@@ -11,9 +11,44 @@ import cui.render.Style;
 class Text extends View {
     public var content:String;
 
+    /**
+        How the canon says this text is set (`nui.TextStyle`).
+
+        A terminal keeps all five so that a tree it describes says what it was
+        given, and honours the three it can: a weight past six hundred is bold,
+        italic is italic, and digits are of one width already. A cell is one
+        size and one font, so the scale and the family are carried and not
+        drawn -- which is the honest answer, not a lack.
+    **/
+    public var scale(default, null):Null<String> = null;
+
+    public var family(default, null):Null<String> = null;
+
+    public var weight(default, null):Null<Int> = null;
+
+    public var slanted(default, null):Null<Bool> = null;
+
+    public var tabular(default, null):Bool = false;
+
     public function new(content:String) {
         super();
         this.content = content;
+    }
+
+    /** Say how it is set; what a terminal can draw, it applies here. **/
+    public function styled(?scale:String, ?family:String, ?weight:Int, ?italic:Bool, tabular:Bool = false):Text {
+        if (scale != null) this.scale = nui.TextStyle.scaleOf(scale);
+        if (family != null && family != "") this.family = family;
+        if (weight != null) this.weight = nui.TextStyle.weightOf(weight);
+        if (italic != null) this.slanted = italic;
+        if (tabular) this.tabular = true;
+
+        // A heading is heavier because it cannot be larger; a weight said
+        // outright is the same request, made in the vocabulary of fonts.
+        var heading = this.scale == "title" || this.scale == "subtitle";
+        if (heading || (this.weight != null && nui.TextStyle.isBold(this.weight))) bold();
+        if (this.slanted == true) super.italic();
+        return this;
     }
 
     override public function measure(constraint:Constraint):Size {

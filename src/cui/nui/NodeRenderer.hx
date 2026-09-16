@@ -48,7 +48,15 @@ class NodeRenderer {
 		var props = node.props;
 		return switch (node.type) {
 			case "Text":
-				new cui.ui.Text(PropValueTools.asString(props.get("text")));
+				// Set as it was sent: the scale, and what a terminal can do
+				// with the rest. Nothing of this crossed before the canon said
+				// how -- a received heading was ordinary text.
+				new cui.ui.Text(PropValueTools.asString(props.get("text"))).styled(
+					props.exists("scale") ? PropValueTools.asString(props.get("scale")) : null,
+					props.exists("family") ? PropValueTools.asString(props.get("family")) : null,
+					props.exists("weight") ? PropValueTools.asInt(props.get("weight")) : null,
+					props.exists("italic") ? PropValueTools.asBool(props.get("italic")) : null,
+					nui.TextStyle.isTabular(props.exists("numbers") ? PropValueTools.asString(props.get("numbers")) : null));
 
 			case "VStack":
 				new cui.ui.VStack(kids, PropValueTools.asInt(props.get("spacing")));
