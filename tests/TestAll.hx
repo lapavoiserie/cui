@@ -524,11 +524,25 @@ class TestAll {
         var sized = cui.term.Graphics.sequence(px, 2, 1);
         assert(sized != null && StringTools.startsWith(sized, "\x1bP"), "with Sixel there is one");
         assert(sized.indexOf("\"1;1;20;20") > 0, "scaled to the cells it was given");
-        assert(cui.nui.Icons.glyphOf("settings") == "\u2699" + cui.nui.Icons.AS_TEXT,
-            "a character with an emoji face asks for the text one");
-        var wide = new Buffer(8, 1);
-        wide.writeString(0, 0, cui.nui.Icons.glyphOf("settings") + "gear", new Style());
-        assert(wide.get(1, 0).char == "g", "and the selector stays in its cell, so the name beside it does not move");
+        // A character a terminal draws as a picture is given the room it
+        // paints over, measured in a terminal rather than derived.
+        assert(cui.nui.Icons.cellsOf("settings") == 2 && cui.nui.Icons.cellsOf("mic") == 1,
+            "a character drawn as a picture asks for two cells, a plain one for one");
+        var gear = new cui.ui.Icon("settings");
+        assert(gear.measure(Unbounded).width == 2, "so the layout leaves it two");
+        var inked = new Buffer(12, 1);
+        gear.render(inked, new Rect(0, 0, 12, 1));
+        assert(inked.get(0, 0).char == cui.nui.Icons.glyphOf("settings") && inked.get(1, 0).char == " ",
+            "and what follows it is a blank the picture is drawn over");
+        assert(!inked.get(1, 0).continuation, "which the renderer still writes: the cursor did advance over it");
+
+        // A character the terminal advances two cells for: the second is not
+        // a cell anybody may write.
+        var wide = new Buffer(12, 1);
+        wide.setWide(3, 0, "X", new Style());
+        assert(wide.get(4, 0).continuation, "the cell after a wide character belongs to it");
+        wide.set(4, 0, "y", new Style());
+        assert(!wide.get(4, 0).continuation, "and writing there frees it again");
         cui.term.Graphics.say(KittyGraphics);
         assert(StringTools.startsWith(cui.term.Graphics.sequence(px, 2, 1), "\x1b_G"), "and with kitty, the other one");
 

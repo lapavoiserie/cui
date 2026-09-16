@@ -28,18 +28,16 @@ class Button extends View {
         this.focusable = true;
     }
 
-    /** What sits between the brackets: the character, a space, the label. **/
-    function inside():String {
+    /** Cells, not code points: a character may be one or two (`Icons.ROOM`). **/
+    function iconWidth():Int {
         var glyph = icon == null ? null : cui.nui.Icons.glyphOf(icon);
-        if (glyph == null) return label;
-        return label == "" ? glyph : glyph + " " + label;
+        return glyph == null ? 0 : cui.nui.Icons.cellsOf(icon);
     }
 
-    /** Cells, not code points: a stroked character is two of them in one cell. **/
     function insideWidth():Int {
-        var glyph = icon == null ? null : cui.nui.Icons.glyphOf(icon);
-        if (glyph == null) return label.length;
-        return label == "" ? 1 : 2 + label.length;
+        var width = iconWidth();
+        if (width == 0) return label.length;
+        return label == "" ? width : width + 1 + label.length;
     }
 
     /**
@@ -85,7 +83,6 @@ class Button extends View {
             renderStyle.inverse = true;
         }
 
-        var display = "[ " + inside() + " ]";
         var cells = insideWidth() + 4;
         var align = getAlignment();
         var xOffset = switch (align) {
@@ -95,7 +92,25 @@ class Button extends View {
         };
         if (xOffset < 0) xOffset = 0;
 
-        buffer.writeString(inner.x + xOffset, inner.y, display, renderStyle);
+        // Written in pieces rather than as one string: an icon may take two
+        // cells for one character, which no string length can say.
+        var at = inner.x + xOffset;
+        at += buffer.writeString(at, inner.y, "[ ", renderStyle);
+        var width = iconWidth();
+        if (width > 0) {
+            var glyph = cui.nui.Icons.glyphOf(icon);
+            switch (cui.nui.Icons.roomOf(icon)) {
+                case Wide: buffer.setWide(at, inner.y, glyph, renderStyle);
+                case Inked:
+                    buffer.writeString(at, inner.y, glyph, renderStyle);
+                    buffer.set(at + 1, inner.y, " ", renderStyle);
+                case One: buffer.writeString(at, inner.y, glyph, renderStyle);
+            }
+            at += width;
+            if (label != "") at += buffer.writeString(at, inner.y, " ", renderStyle);
+        }
+        at += buffer.writeString(at, inner.y, label, renderStyle);
+        buffer.writeString(at, inner.y, " ]", renderStyle);
     }
 
     override public function handleEvent(event:Event):Bool {

@@ -12,6 +12,11 @@ class Renderer {
                 var prevCell = prev.get(x, y);
                 var currCell = curr.get(x, y);
 
+                // The second half of a wide character is not written: the
+                // terminal is already past it, and a space there would paint
+                // over the half it belongs to.
+                if (currCell.continuation) continue;
+
                 if (!currCell.equals(prevCell)) {
                     // Move cursor
                     output.add("\x1b[");
@@ -80,6 +85,7 @@ class Renderer {
 
             for (x in 0...buffer.width) {
                 var cell = buffer.get(x, y);
+                if (cell.continuation) continue;
                 if (lastStyle == null || !cell.style.equals(lastStyle)) {
                     output.add(cell.style.toAnsi());
                     lastStyle = cell.style;

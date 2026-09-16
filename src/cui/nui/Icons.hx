@@ -13,55 +13,71 @@ package cui.nui;
 	says: the base character followed by a combining long solidus, which the
 	terminal draws in the same cell.
 **/
+enum Room {
+	/** One cell, drawn inside it. **/
+	One;
+
+	/** One cell for the cursor, two for the ink: a blank cell follows it. **/
+	Inked;
+
+	/** Two cells: the terminal advances over both. **/
+	Wide;
+}
+
 class Icons {
 	/** A combining long solidus overlay: the stroke of an `-off` name. **/
 	public static inline var STROKE = "̸";
 
 	/**
-		Variation selector 15: "draw this one as text, not as an emoji".
+		How much room a character asks for, beyond the cell it is written in.
 
-		Several of these characters have two faces, and a terminal that picks
-		the emoji one draws it **two cells wide and in colour** -- Windows
-		Terminal does -- so the name beside the icon collides with it. Asking
-		for the text face is what the selector is for, and a terminal with no
-		emoji face for that character ignores it. It lives in the cell of the
-		character it follows (`cui.render.Buffer`), so an icon is one cell
-		whichever face is drawn.
+		Measured in a terminal, not derived from a property: the Farceur session
+		put every candidate beside a rule in Windows Terminal and read off what
+		happened. Two things can happen, and they are not the same thing.
 
-		Found on Windows by the Farceur session: `settings`, `warning`, `mail`,
-		`phone` and `person` came out wide and coloured.
+		- **The terminal advances two cells** -- a real emoji, and a CJK
+		  ideograph later. The cell after belongs to the character, and nothing
+		  may write there: `Wide`, which `Buffer.setWide` marks.
+		- **The terminal advances one cell and paints over the next** -- which is
+		  what Windows Terminal does with `settings`, `warning`, `mail` and
+		  `phone`, having an emoji face for them and preferring it. The cursor is
+		  where cui thinks it is, but the name beside the icon disappears under
+		  the picture: `Inked`, which reserves a blank cell after it.
+
+		Elsewhere -- a terminal drawing these monochrome in one cell -- a
+		reserved cell is one space, which costs a panel nothing and is why this
+		is not conditioned on which terminal is running.
+
+		Benjamin chose colour over compactness here: "les autres icônes ne sont
+		pas assez visibles". So a name keeps the character that is drawn as a
+		picture, and the layout makes room for it.
 	**/
-	public static inline var AS_TEXT = "︎";
+	public static final ROOM:Map<String, Room> = [
+		"settings" => Inked, "warning" => Inked, "mail" => Inked, "phone" => Inked,
+		"delete" => Inked,
+	];
 
-	/**
-		**A character here is one a terminal draws in one narrow cell.**
+	/** How much room this name's character takes, in cells. **/
+	public static function cellsOf(name:String):Int
+		return roomOf(name) == One ? 1 : 2;
 
-		That is the whole constraint, and it is stricter than "a character that
-		means the right thing": a terminal lays a panel out in cells, and one
-		glyph drawn two cells wide shifts every name after it on that line.
-		Windows Terminal draws several old symbols that way -- it has an emoji
-		face for them and prefers it -- and `AS_TEXT` does not always stop it.
-
-		So a name whose obvious picture is wide gets a plainer character that is
-		narrow everywhere, and the vocabulary's names never change for it. Each
-		candidate is measured in a terminal before it lands here: `mic` became a
-		circle on a stand rather than a musical note, and `eye` a dotted circle,
-		after the Farceur session measured them in Windows Terminal against a
-		rule. An application that would rather have its own may set this map.
-	**/
+	public static function roomOf(name:String):Room {
+		var room = ROOM.get(name);
+		return room == null ? One : room;
+	}
 
 	public static final GLYPHS:Map<String, String> = [
 		// general
 		"add" => "+", "close" => "×", "check" => "✓", "delete" => "⌫",
-		"edit" => "✎", "search" => "⌕", "settings" => "⚙" + AS_TEXT, "home" => "⌂",
-		"info" => "ⓘ", "warning" => "⚠" + AS_TEXT, "error" => "⊗", "menu" => "≡",
+		"edit" => "✎", "search" => "⌕", "settings" => "⚙", "home" => "⌂",
+		"info" => "ⓘ", "warning" => "⚠", "error" => "⊗", "menu" => "≡",
 		"more" => "…", "refresh" => "↻", "share" => "⇪", "star" => "★",
-		"person" => "☺" + AS_TEXT, "lock" => "⚿", "unlock" => "⚷", "mail" => "✉" + AS_TEXT,
-		"phone" => "☎" + AS_TEXT, "save" => "⇩",
+		"person" => "☺", "lock" => "⚿", "unlock" => "⚷", "mail" => "✉",
+		"phone" => "☎", "save" => "⇩",
 		// direction
 		"back" => "‹", "forward" => "›", "up" => "˄", "down" => "˅",
 		// media
-		"play" => "▶" + AS_TEXT, "pause" => "‖", "stop" => "■", "record" => "●",
+		"play" => "▶", "pause" => "‖", "stop" => "■", "record" => "●",
 		"swap" => "⇄", "broadcast" => "⦿",
 		"mic" => "⚲", "mic-off" => "⚲" + STROKE,
 		"speaker" => "♫", "speaker-off" => "♫" + STROKE,

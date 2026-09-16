@@ -21,8 +21,29 @@ class Buffer {
         return cells[y * width + x];
     }
 
+    /**
+        Write a character the terminal advances two cells for.
+
+        The cell after it is marked as belonging to it, so nothing writes
+        there and `Renderer` does not move the cursor over it. See
+        `Cell.continuation`.
+    **/
+    public function setWide(x:Int, y:Int, char:String, style:Style):Void {
+        set(x, y, char, style);
+        if (x + 1 < width && y >= 0 && y < height) {
+            var after = get(x + 1, y);
+            after.char = " ";
+            after.style = style;
+            after.continuation = true;
+        }
+    }
+
     public function set(x:Int, y:Int, char:String, style:Style):Void {
         if (x < 0 || x >= width || y < 0 || y >= height) return;
+        // Writing where a wide character's second half was frees that half:
+        // whatever is drawn now owns the cell.
+        var cell = get(x, y);
+        cell.continuation = false;
         var cell = cells[y * width + x];
         cell.char = char;
         cell.style = style;

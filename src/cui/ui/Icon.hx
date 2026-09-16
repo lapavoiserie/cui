@@ -31,10 +31,10 @@ class Icon extends View {
 
 	override public function measure(constraint:Constraint):Size {
 		var insets = getInsets();
-		// One cell for a character, whatever its string length: a stroked name
-		// is two code points in one cell.
+		// Cells, not code points: a stroked name is two code points in one
+		// cell, and a character drawn as a picture asks for two (`Icons.ROOM`).
 		var glyph = cui.nui.Icons.glyphOf(name);
-		var w = glyph != null ? 1 : display().length;
+		var w = glyph != null ? cui.nui.Icons.cellsOf(name) : display().length;
 		return new Size(w + insets.horizontalTotal(), 1 + insets.verticalTotal());
 	}
 
@@ -42,6 +42,22 @@ class Icon extends View {
 		frame = area;
 		if (isHidden()) return;
 		var inner = area.inner(getInsets());
-		buffer.writeString(inner.x, inner.y, display(), getEffectiveStyle());
+		var glyph = cui.nui.Icons.glyphOf(name);
+		var style = getEffectiveStyle();
+		if (glyph == null) {
+			buffer.writeString(inner.x, inner.y, display(), style);
+			return;
+		}
+		switch (cui.nui.Icons.roomOf(name)) {
+			case Wide:
+				buffer.setWide(inner.x, inner.y, glyph, style);
+			case Inked:
+				buffer.writeString(inner.x, inner.y, glyph, style);
+				// The blank the picture is drawn over. Written rather than
+				// merely reserved, so that what was there before is cleared.
+				buffer.set(inner.x + 1, inner.y, " ", style);
+			case One:
+				buffer.writeString(inner.x, inner.y, glyph, style);
+		}
 	}
 }
