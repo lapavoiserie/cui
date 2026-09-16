@@ -737,6 +737,45 @@ class TestAll {
         assert(StringTools.rtrim(row(narrow, 1)).length == StringTools.rtrim(row(wide, 1)).length,
             "the row keeps its width whatever is chosen");
 
+        // --- A key belongs to the view that has focus ---
+        //
+        // Benjamin, on a row of five: "left/right ne respecte pas le focus sur
+        // les pickers". Two defects met. The tree pass -- which exists so a
+        // ScrollView can scroll and a Tabs can change tab, neither being
+        // focusable -- offered the event to EVERY view, so a key the focused
+        // view declined went looking for a taker and the first picker in the
+        // tree took it. And this picker declined Right at the end of its list
+        // instead of consuming it, which is what set the key loose.
+        var first = new cui.state.State.IntState(0, "first");
+        var second = new cui.state.State.IntState(1, "second");
+        var panel = new VStack([
+            new cui.ui.Picker("A", ["a1", "a2", "a3"], cui.ui.Picker.PickerBinding.fromState(first)),
+            new cui.ui.Picker("B", ["b1", "b2"], cui.ui.Picker.PickerBinding.fromState(second)),
+        ], 0);
+
+        // The second picker is at the end of its list: Right does nothing, and
+        // says it took the key anyway.
+        var atEnd:cui.ui.Picker = cast panel.children[1];
+        assert(atEnd.handleEvent(Key(new cui.event.KeyEvent.KeyEvent(Right))),
+            "a picker at the end of its list still takes Right");
+        assert(second.get() == 1 && first.get() == 0,
+            "and nothing moved, neither it nor its neighbour");
+
+        // Every view here that handles a key is focusable, which is why the
+        // loop no longer has a pass over the tree for the others: there are no
+        // others, and that pass could only ever reach a view behind focus's
+        // back. Checked rather than asserted in prose, since the day one of
+        // these stops being focusable is the day the rule needs revisiting.
+        for (built in [
+            (new cui.ui.Button("b", () -> {}) : View),
+            new cui.ui.Checkbox("c", new cui.ui.Checkbox.CheckboxBinding(() -> false, _ -> {})),
+            new cui.ui.Picker("p", ["x"], new cui.ui.Picker.PickerBinding(() -> 0, _ -> {})),
+            new cui.ui.ScrollView(new VStack([new Text("a")], 0),
+                new cui.ui.ScrollView.ScrollOffset(() -> 0, _ -> {})),
+        ]) {
+            assert(built.focusable, "a view that handles keys is focusable");
+        }
+
         // An empty list is legal, and must not be a crash.
         var none = new cui.ui.Picker("Nothing", [], new cui.ui.Picker.PickerBinding(() -> 0, _ -> {}));
         none.render(new Buffer(20, 1), new Rect(0, 0, 20, 1));

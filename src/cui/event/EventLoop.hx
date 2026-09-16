@@ -104,24 +104,27 @@ class EventLoop {
 
                 // Handle focus navigation (Tab / Shift-Tab)
                 if (!focusManager.handleNavigation(event)) {
-                    // Focused view first, then the tree, then the application.
+                    // The focused view, then the application. Nothing between
+                    // them.
                     //
-                    // The tree pass is what makes a scroll view scroll and a tab
-                    // bar change tabs. Both handle arrow keys and neither is
-                    // focusable, so with only a focused dispatch their
-                    // `handleEvent` was never called: a long page could not be
-                    // moved and a tabbed app was stuck on its first tab, with
-                    // nothing to press.
+                    // There used to be a pass over the whole rendered tree
+                    // here, offering what focus declined to any view that would
+                    // take it. Every view in this library that handles a key is
+                    // focusable -- Button, Checkbox, Input, Slider, Picker, and
+                    // ScrollView, Tabs and ListView too -- so that pass could
+                    // only ever reach a view BEHIND focus's back, which is what
+                    // it did: on a panel of five pickers, Right pressed on the
+                    // fifth moved the first. Benjamin saw it.
                     //
-                    // Focus keeps priority, so a text field still owns its own
-                    // arrows. Deepest first, so an inner view wins over the
-                    // container around it.
+                    // It was added to make a scroll view scroll and a tab bar
+                    // change tabs, on the premise that neither was focusable.
+                    // They both were, and had been for months. The real cause
+                    // was the other half of that same commit: `Tabs` renders
+                    // its content from `tabs` and not from `children`, so the
+                    // focus ring -- which walks `children` -- never reached the
+                    // scroll view inside a tab. That fix stays; this one goes.
                     if (!focusManager.dispatchToFocused(event)) {
-                        if (!offerToTree(lastViewTree, event)) {
-                            handleEvent(event);
-                        } else {
-                            StateBase.markDirty();
-                        }
+                        handleEvent(event);
                     }
                 } else {
                     StateBase.markDirty();
@@ -164,21 +167,6 @@ class EventLoop {
             return view;
         }
         return null;
-    }
-
-    /**
-        Offer an event to the rendered tree, deepest child first.
-
-        Returns as soon as a view takes it. Nothing here knows which views care
-        about which keys -- a view says so by answering `handleEvent`, which is
-        the same contract the focused dispatch uses.
-    **/
-    function offerToTree(view:View, event:Event):Bool {
-        if (view == null) return false;
-        for (child in view.children) {
-            if (offerToTree(child, event)) return true;
-        }
-        return view.handleEvent(event);
     }
 
     function renderFrame(bodyFn:Void->View, size:Size):Void {

@@ -173,10 +173,17 @@ class Picker extends View {
         switch (event) {
             case Key(key):
                 switch (key.code) {
+                    // Taken whether or not anything moved. A picker at the end
+                    // of its list has answered Right -- with "no" -- and a key
+                    // it declined would go on to whatever else in the tree
+                    // wants arrows, which is how the first picker on a panel
+                    // ended up moving for the fifth one's keystroke.
                     case Right:
-                        return move(1);
+                        move(1);
+                        return true;
                     case Left:
-                        return move(-1);
+                        move(-1);
+                        return true;
                     case Enter:
                         return advance();
                     case Char(c):
