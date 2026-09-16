@@ -9,9 +9,14 @@ package cui.nui;
 	emoji: an emoji is two cells wide in some terminals and a blank box in
 	others, and either wrecks a line of a panel.
 
-	An `-off` name is its base with a stroke through it, as nui's vocabulary
-	says: the base character followed by a combining long solidus, which the
-	terminal draws in the same cell.
+	An `-off` name is its base with a stroke through it -- the base character
+	followed by a combining long solidus, which the terminal draws in the same
+	cell -- unless it has a character of its own, as `speaker-off` does.
+
+	Two names stay plain characters, by exception: `move` and `grid`, for which
+	nothing coloured reads as what they mean -- the arrows are drawn
+	monochrome and the squares look like squares. `menu`, `more`, the four
+	directions and a few others are plain too, being signs rather than things.
 **/
 enum Room {
 	/** One cell, drawn inside it. **/
@@ -53,8 +58,23 @@ class Icons {
 		picture, and the layout makes room for it.
 	**/
 	public static final ROOM:Map<String, Room> = [
+		// The terminal advances one cell and paints over the next: a blank is
+		// reserved after these.
 		"settings" => Inked, "warning" => Inked, "mail" => Inked, "phone" => Inked,
-		"delete" => Inked,
+		// The terminal advances two cells, and the ink stays inside them.
+		"add" => Wide, "close" => Wide, "check" => Wide, "edit" => Wide, "search" => Wide,
+		"home" => Wide, "info" => Wide, "error" => Wide, "refresh" => Wide, "share" => Wide,
+		"star" => Wide, "person" => Wide, "lock" => Wide, "unlock" => Wide, "save" => Wide,
+		"pause" => Wide, "stop" => Wide, "record" => Wide, "swap" => Wide, "broadcast" => Wide,
+		"mic" => Wide, "speaker" => Wide, "speaker-off" => Wide, "headphones" => Wide,
+		"folder" => Wide, "document" => Wide, "camera" => Wide, "video" => Wide,
+		"clock" => Wide, "globe" => Wide, "palette" => Wide, "crop" => Wide,
+		"delete" => Wide, "eye" => Wide, "eye-off" => Wide, "mic-off" => Wide,
+		"image" => Wide, "display" => Wide, "window" => Wide, "text" => Wide,
+		"rotate" => Wide, "bring-front" => Wide, "send-back" => Wide,
+		// Drawn monochrome in the fonts measured, and kept anyway: it is the
+		// right sign, and the face a font gives it is the font's business.
+		"play" => Wide,
 	];
 
 	/** How much room this name's character takes, in cells. **/
@@ -68,29 +88,29 @@ class Icons {
 
 	public static final GLYPHS:Map<String, String> = [
 		// general
-		"add" => "+", "close" => "×", "check" => "✓", "delete" => "⌫",
-		"edit" => "✎", "search" => "⌕", "settings" => "⚙", "home" => "⌂",
-		"info" => "ⓘ", "warning" => "⚠", "error" => "⊗", "menu" => "≡",
-		"more" => "…", "refresh" => "↻", "share" => "⇪", "star" => "★",
-		"person" => "☺", "lock" => "⚿", "unlock" => "⚷", "mail" => "✉",
-		"phone" => "☎", "save" => "⇩",
+		"add" => "➕", "close" => "❌", "check" => "✅", "delete" => "🗑️",
+		"edit" => "✏️", "search" => "🔍", "settings" => "⚙", "home" => "🏠",
+		"info" => "ℹ️", "warning" => "⚠", "error" => "⛔", "menu" => "≡",
+		"more" => "…", "refresh" => "🔄", "share" => "📤", "star" => "⭐",
+		"person" => "👤", "lock" => "🔒", "unlock" => "🔓", "mail" => "✉",
+		"phone" => "☎", "save" => "💾",
 		// direction
 		"back" => "‹", "forward" => "›", "up" => "˄", "down" => "˅",
 		// media
-		"play" => "▶", "pause" => "‖", "stop" => "■", "record" => "●",
-		"swap" => "⇄", "broadcast" => "⦿",
-		"mic" => "⚲", "mic-off" => "⚲" + STROKE,
-		"speaker" => "♫", "speaker-off" => "♫" + STROKE,
-		"headphones" => "Ω",
+		"play" => "▶️", "pause" => "⏸️", "stop" => "⏹️", "record" => "⏺️",
+		"swap" => "🔀", "broadcast" => "📡",
+		"mic" => "🎤", "mic-off" => "🤐",
+		"speaker" => "🔊", "speaker-off" => "🔇",
+		"headphones" => "🎧",
 		// visibility
-		"eye" => "ʘ", "eye-off" => "ʘ" + STROKE,
+		"eye" => "👁️", "eye-off" => "🙈",
 		// things
-		"folder" => "▤", "document" => "▯", "image" => "▣", "camera" => "⊡",
-		"video" => "▷", "clock" => "◷", "display" => "▭", "window" => "▢",
-		"globe" => "◍", "text" => "T", "palette" => "◐", "grid" => "▦",
+		"folder" => "📁", "document" => "📄", "image" => "🖼️", "camera" => "📷",
+		"video" => "🎬", "clock" => "🕐", "display" => "🖥️", "window" => "🪟",
+		"globe" => "🌐", "text" => "🔤", "palette" => "🎨", "grid" => "▦",
 		// arranging
-		"layers" => "≣", "bring-front" => "⤒", "send-back" => "⤓",
-		"crop" => "⌗", "move" => "✥", "rotate" => "⟲",
+		"layers" => "≣", "bring-front" => "⏫", "send-back" => "⏬",
+		"crop" => "✂️", "move" => "✥", "rotate" => "🔃",
 	];
 
 	/** The character for a name, or null when this vocabulary has none. **/

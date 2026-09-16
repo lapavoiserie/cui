@@ -55,13 +55,16 @@ cannot fetch. `width` and `height` are points, as everywhere else, and become
 cells with the size a cell actually has — asked of the terminal, `ESC [ 14 t`
 over `ESC [ 18 t`.
 
-`Icon` is one character per name (`cui.nui.Icons`, a table an application may
-override for its own screen), chosen so a panel's columns
-hold: an old, widely cut character rather than an emoji, which is two cells wide
-in some terminals and a box in others. An `-off` name is its base with a
-combining stroke, drawn in the same cell — `cui.render.Buffer` keeps a combining
-mark with the character it belongs to, which also keeps text with a decomposed
-accent aligned. `Button` takes an icon name too.
+`Icon` is a character per name (`cui.nui.Icons`, a table an application may
+override for its own screen), and most of them are coloured pictures: Benjamin
+chose colour over compactness, the plain symbols not being visible enough. The
+table records how much room each one takes, **measured in a terminal** rather
+than derived from a Unicode property, because two different things happen — a
+terminal advances two cells for an emoji, and the cell after it is one nobody may
+write; or it advances one and *paints* over the next, which is what Windows
+Terminal does with `⚙`, `⚠`, `✉` and `☎`, and which asks for a blank cell after
+it instead. `move` and `grid` stay plain characters: nothing coloured reads as
+what they mean. `Button` takes an icon name too.
 
 `ScrollView` and `TabView` take a **trailing optional** argument the contract
 does not name, so an application can own the scroll offset and the tab

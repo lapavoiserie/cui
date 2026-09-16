@@ -387,14 +387,27 @@ class TestAll {
         var missing = [for (n in nui.Icons.NAMES) if (cui.nui.Icons.glyphOf(n) == null) n];
         assert(missing.length == 0, "every name of the vocabulary has a character: " + missing);
         assert(Lambda.count(cui.nui.Icons.GLYPHS) == nui.Icons.NAMES.length, "and nothing else has one");
-        assert(cui.nui.Icons.glyphOf("mic-off") == cui.nui.Icons.glyphOf("mic") + cui.nui.Icons.STROKE,
-            "an -off name is its base, stroked");
+        // Every -off name now has a character of its own; the stroke stays for
+        // an application whose own table needs it, and for a name that one day
+        // has no crossed-out picture to use.
+        var stroked = 0;
+        for (name in ["mic-off", "eye-off", "speaker-off"]) {
+            var base = name.substr(0, name.length - 4);
+            if (cui.nui.Icons.glyphOf(name) == cui.nui.Icons.glyphOf(base) + cui.nui.Icons.STROKE) stroked++;
+            assert(cui.nui.Icons.glyphOf(name) != cui.nui.Icons.glyphOf(base), name + " is not its base undrawn");
+        }
+        assert(stroked == 0, "every -off name has a character of its own");
+
+        // The stroke itself still belongs to the cell before it, whoever uses it.
+        var buf = new Buffer(6, 1);
+        buf.writeString(0, 0, "\u266a" + cui.nui.Icons.STROKE + "x", new Style());
+        assert(buf.get(0, 0).char == "\u266a" + cui.nui.Icons.STROKE && buf.get(1, 0).char == "x",
+            "a stroked character is one cell, not two");
 
         var icon = new cui.ui.Icon("mic-off");
-        assert(icon.measure(Unbounded).width == 1, "a stroked icon is one cell wide, not two");
-        var buf = new Buffer(6, 1);
+        assert(icon.measure(Unbounded).width == 2, "and a picture asks for the two it is drawn in");
         icon.render(buf, new Rect(0, 0, 6, 1));
-        assert(buf.get(0, 0).char == cui.nui.Icons.glyphOf("mic-off"), "and the cell holds both code points");
+        assert(buf.get(0, 0).char == cui.nui.Icons.glyphOf("mic-off"), "the cell holding the whole character");
 
         var newer = new cui.ui.Icon("teleport", "Teleport");
         assert(newer.display() == "Teleport", "a name with no character is its label");
@@ -408,11 +421,12 @@ class TestAll {
         assert(pbuf.get(0, 0).char == "[" && pbuf.get(1, 0).char == "F", "drawn where it stands");
 
         var take = new cui.ui.Button("TAKE", () -> {}, "swap");
-        assert(take.measure(Unbounded).width == 4 + 2 + 4, "a button with an icon leaves room for it");
+        var iconCells = cui.nui.Icons.cellsOf("swap");
+        assert(take.measure(Unbounded).width == 4 + iconCells + 1 + 4, "a button with an icon leaves room for it");
         var bbuf = new Buffer(20, 1);
         take.render(bbuf, new Rect(0, 0, 20, 1));
-        assert(bbuf.get(2, 0).char == cui.nui.Icons.glyphOf("swap") && bbuf.get(4, 0).char == "T",
-            "the character comes before the label");
+        assert(bbuf.get(2, 0).char == cui.nui.Icons.glyphOf("swap") && bbuf.get(2 + iconCells + 1, 0).char == "T",
+            "the character comes before the label, with the room it asks for between them");
         assert(new cui.ui.Button("Cut", () -> {}, "cut").icon == null, "a name outside the vocabulary is no icon");
 
         // --- The wire ---
@@ -526,7 +540,8 @@ class TestAll {
         assert(sized.indexOf("\"1;1;20;20") > 0, "scaled to the cells it was given");
         // A character a terminal draws as a picture is given the room it
         // paints over, measured in a terminal rather than derived.
-        assert(cui.nui.Icons.cellsOf("settings") == 2 && cui.nui.Icons.cellsOf("mic") == 1,
+        assert(cui.nui.Icons.cellsOf("settings") == 2 && cui.nui.Icons.cellsOf("mic") == 2
+            && cui.nui.Icons.cellsOf("menu") == 1,
             "a character drawn as a picture asks for two cells, a plain one for one");
         var gear = new cui.ui.Icon("settings");
         assert(gear.measure(Unbounded).width == 2, "so the layout leaves it two");
