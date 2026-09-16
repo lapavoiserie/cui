@@ -62,6 +62,10 @@ class AnsiBackend implements Backend {
         Terminal.writeStdout("\x1b[?1006l\x1b[?1000l");
     }
 
+    public function readByte(timeoutMs:Int):Int {
+        return Terminal.readByte(timeoutMs);
+    }
+
     public function pollEvent(timeoutMs:Int):Null<Event> {
         var byte = Terminal.readByte(timeoutMs);
         if (byte < 0) return null;

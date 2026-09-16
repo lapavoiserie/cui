@@ -15,6 +15,14 @@ interface Backend {
     function flush():Void;
     function getSize():Size;
     function pollEvent(timeoutMs:Int):Null<Event>;
+
+    /**
+        One byte of input, raw, or -1 when none came in time.
+
+        For reading a terminal's answer to a question -- what it can draw, how
+        big a cell is (`cui.term.Graphics`) -- which is bytes, not an event.
+    **/
+    function readByte(timeoutMs:Int):Int;
     function enableMouseCapture():Void;
     function disableMouseCapture():Void;
 }

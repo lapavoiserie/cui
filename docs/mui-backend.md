@@ -44,11 +44,16 @@ six of them honest.
 `mui_owns_main` flag, so an application writes its `main()` once instead of
 guarding it with a list of backend names.
 
-`cui` has an `Image` that draws no pixels: a terminal has none to put one in
-yet, so the picture stands in as its `alt`, in brackets, the way a text browser
-shows one it cannot fetch. The pixels come with the terminal graphics protocols
-— Sixel first — and only the drawing changes when they do; the node and its
-props are the canon's.
+`cui` draws a real `Image`, with whatever the terminal turns out to have.
+`cui.term.Graphics` asks it — the kitty graphics protocol, Sixel (which is what
+Windows Terminal has), or half blocks, which are text and work in anything with
+colour, a multiplexer included. The PNG is decoded here (`cui.render.Png`),
+because a terminal backend is the one that needs the pixels rather than a handle
+to hand a platform. A source this cannot read, or a terminal with no colour at
+all, still shows the `alt` in brackets, the way a text browser shows a picture it
+cannot fetch. `width` and `height` are points, as everywhere else, and become
+cells with the size a cell actually has — asked of the terminal, `ESC [ 14 t`
+over `ESC [ 18 t`.
 
 `Icon` is one character per name (`cui.nui.Icons`), chosen so a panel's columns
 hold: an old, widely cut character rather than an emoji, which is two cells wide

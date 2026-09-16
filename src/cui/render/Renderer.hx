@@ -34,11 +34,38 @@ class Renderer {
         // Reset style at end
         output.add("\x1b[0m");
 
+        output.add(pictures(curr));
+
         var str = output.toString();
         if (str.length > 4) { // more than just the reset
             backend.write(str);
             backend.flush();
         }
+    }
+
+    /**
+        The pictures of a frame, each at its cell.
+
+        After the text, and every frame rather than only when something
+        changed: a terminal owns those pixels and may have scrolled, cleared or
+        reflowed them, and none of that reaches the cell diff. Nothing is
+        written for a frame with no picture in it, which is almost every frame
+        of almost every application.
+    **/
+    static function pictures(buffer:Buffer):String {
+        if (buffer.graphics.length == 0) return "";
+        var out = new StringBuf();
+        for (picture in buffer.graphics) {
+            out.add("\x1b[");
+            out.add(Std.string(picture.y + 1));
+            out.add(";");
+            out.add(Std.string(picture.x + 1));
+            out.add("H");
+            out.add(picture.payload);
+        }
+        // The cursor is wherever the picture left it.
+        out.add("\x1b[H");
+        return out.toString();
     }
 
     public static function renderFull(buffer:Buffer, backend:Backend):Void {
@@ -62,6 +89,7 @@ class Renderer {
         }
 
         output.add("\x1b[0m");
+        output.add(pictures(buffer));
         backend.write(output.toString());
         backend.flush();
     }

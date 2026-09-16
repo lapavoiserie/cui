@@ -7,13 +7,18 @@ import cui.layout.Size;
 import cui.render.Buffer;
 
 /**
-	A picture, in a terminal that has none yet.
+	A picture, drawn with whatever this terminal can do.
 
-	nui's canonical `Image` exists here so a tree carrying one is not a hole in
-	the panel: what it draws is the `alt`, in brackets, the way a text browser
-	shows a picture it cannot fetch. The pixels come with the terminal graphics
-	protocols -- Sixel first -- and only the drawing changes when they do; the
-	node, its props and this class stay as they are.
+	`cui.term.Graphics` says which that is: the kitty protocol, Sixel, or half
+	blocks -- text, which works in anything with colour, including through a
+	multiplexer. What has no pixels at all, because the source names nothing
+	this can read or the terminal has no colour, draws the `alt` in brackets,
+	the way a text browser shows a picture it cannot fetch.
+
+	**Sized in cells.** `width` and `height` are points, as on every other
+	backend; a terminal turns them into cells with the size a cell actually has
+	(asked of the terminal, or a common one's). With neither, the picture takes
+	the room its own pixels ask for, within reason.
 **/
 class Image extends View {
 	public var src(default, null):String;
@@ -37,15 +42,66 @@ class Image extends View {
 	public function display():String
 		return "[" + (alt == "" ? "picture" : alt) + "]";
 
+	/** The pixels, decoded once, or null when there are none to draw. **/
+	public function pixels():Null<cui.render.Pixels>
+		return cui.render.Picture.of(src);
+
+	/**
+		How many cells the picture takes.
+
+		The size it was given, in points, over the size of a cell; else the
+		picture's own pixels, capped so a photograph does not take a screen.
+	**/
+	public function cells():{columns:Int, rows:Int} {
+		var px = pixels();
+		if (px == null) return {columns: 0, rows: 0};
+		var cellW = cui.term.Graphics.cellWidth;
+		var cellH = cui.term.Graphics.cellHeight;
+		var wide = drawWidth != null ? drawWidth : (drawHeight != null ? drawHeight * px.width / px.height : px.width);
+		var tall = drawHeight != null ? drawHeight : (drawWidth != null ? drawWidth * px.height / px.width : px.height);
+		var columns = Math.ceil(wide / cellW);
+		var rows = Math.ceil(tall / cellH);
+		if (columns < 1) columns = 1;
+		if (rows < 1) rows = 1;
+		if (columns > 120) columns = 120;
+		if (rows > 40) rows = 40;
+		return {columns: columns, rows: rows};
+	}
+
 	override public function measure(constraint:Constraint):Size {
 		var insets = getInsets();
-		return new Size(display().length + insets.horizontalTotal(), 1 + insets.verticalTotal());
+		var box = cells();
+		if (box.columns == 0)
+			return new Size(display().length + insets.horizontalTotal(), 1 + insets.verticalTotal());
+		return new Size(box.columns + insets.horizontalTotal(), box.rows + insets.verticalTotal());
 	}
 
 	override public function render(buffer:Buffer, area:Rect):Void {
 		frame = area;
 		if (isHidden()) return;
 		var inner = area.inner(getInsets());
-		buffer.writeString(inner.x, inner.y, display(), getEffectiveStyle());
+		var px = pixels();
+		var box = cells();
+		if (px == null || box.columns == 0) {
+			buffer.writeString(inner.x, inner.y, display(), getEffectiveStyle());
+			return;
+		}
+		var columns = box.columns < inner.width ? box.columns : inner.width;
+		var rows = box.rows < inner.height ? box.rows : inner.height;
+		if (columns <= 0 || rows <= 0) return;
+
+		var sequence = cui.term.Graphics.sequence(px, columns, rows);
+		if (sequence == null) {
+			cui.render.Blocks.draw(buffer, new Rect(inner.x, inner.y, columns, rows), px);
+			return;
+		}
+		// The cells the picture covers are cleared: what the terminal draws
+		// there is pixels, and a character underneath would show through the
+		// parts of it that are not painted.
+		var blank = getEffectiveStyle();
+		for (row in 0...rows)
+			for (column in 0...columns)
+				buffer.set(inner.x + column, inner.y + row, " ", blank);
+		buffer.graphic(inner.x, inner.y, sequence);
 	}
 }

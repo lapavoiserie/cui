@@ -28,6 +28,11 @@ class EventLoop {
 
     public function run(bodyFn:Void->View, handleEvent:Event->Bool):Void {
         backend.enterRawMode();
+        // Asked before the alternate screen and before anything is drawn: the
+        // terminal answers on the input the application is about to own, and
+        // this is the one moment nobody else is reading it. See
+        // `cui.term.Graphics`.
+        cui.term.Graphics.detect(data -> backend.write(data), timeout -> backend.readByte(timeout));
         backend.enterAlternateScreen();
         backend.hideCursor();
         backend.enableMouseCapture();

@@ -78,7 +78,25 @@ class Buffer {
             || (code >= 0xFE20 && code <= 0xFE2F);
     }
 
+    /**
+        Pictures to be drawn over the cells, each where its cell is.
+
+        A terminal graphics protocol paints pixels at the cursor, which is not
+        a cell's content and cannot be diffed like one. So a picture is recorded
+        beside the cells -- the cells it covers are left blank, keeping the
+        layout honest -- and `Renderer` writes it after the text, at the place
+        it names.
+    **/
+    public var graphics(default, null):Array<{x:Int, y:Int, payload:String}> = [];
+
+    /** Draw this escape sequence with the cursor at that cell. **/
+    public function graphic(x:Int, y:Int, payload:String):Void {
+        if (payload == null || payload == "") return;
+        graphics.push({x: x, y: y, payload: payload});
+    }
+
     public function clear():Void {
+        graphics = [];
         var empty = new Style();
         for (cell in cells) {
             cell.char = " ";

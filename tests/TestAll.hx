@@ -441,6 +441,148 @@ class TestAll {
         assert((cast kids[2] : cui.ui.Button).icon == "forward", "a received button keeps its icon");
     }
 
+    // --- Pictures in a terminal ---
+
+    /** The 4x3 picture of `tests/`: primary colours, one transparent pixel. **/
+    static inline var PNG_RGBA = "iVBORw0KGgoAAAANSUhEUgAAAAQAAAADCAYAAAC09K7GAAAALklEQVR4nGP4z8DwHwwZ/oMAAxMjA0gESjAy/GfiEpFjOJlq1MjIzMLw+9dvBgDd1BEQRpizSgAAAABJRU5ErkJggg==";
+
+    /** The same picture as greys, to check a second colour type. **/
+    static inline var PNG_GREY = "iVBORw0KGgoAAAANSUhEUgAAAAQAAAADCAAAAACRn/EaAAAAF0lEQVR4nGPwmSb7n5Hh0cVtDEI1TL8AK/UF8+IN+eAAAAAASUVORK5CYII=";
+
+    static function testPictures():Void {
+        section("Pictures");
+
+        // --- PNG ---
+        var px = cui.render.Png.decode(haxe.crypto.Base64.decode(PNG_RGBA));
+        assert(px != null && px.width == 4 && px.height == 3, "a PNG decodes to its own size");
+        assert(px.red(0, 0) == 255 && px.green(0, 0) == 0 && px.blue(0, 0) == 0, "the first pixel is the red it was written as");
+        assert(px.alpha(3, 0) == 0, "and a transparent pixel keeps its alpha");
+        assert(px.red(1, 2) == 200 && px.green(1, 2) == 100 && px.blue(1, 2) == 50, "a pixel on the last row too");
+        var grey = cui.render.Png.decode(haxe.crypto.Base64.decode(PNG_GREY));
+        assert(grey != null && grey.red(0, 0) == grey.blue(0, 0) && grey.red(0, 0) == 76, "a greyscale PNG decodes to greys");
+        assert(cui.render.Png.decode(haxe.io.Bytes.ofString("not a picture at all")) == null, "and what is not a PNG decodes to nothing");
+
+        // Over a background: a terminal cell has no transparency.
+        var flat = px.over(0, 0, 0);
+        assert(flat.red(3, 0) == 0 && flat.alpha(3, 0) == 255, "a transparent pixel takes the colour behind it");
+
+        // --- Half blocks: a cell is two pixels ---
+        var buffer = new Buffer(4, 1);
+        cui.render.Blocks.draw(buffer, new Rect(0, 0, 4, 1), px.over(0, 0, 0));
+        assert(buffer.get(0, 0).char == cui.render.Blocks.HALF, "a picture cell holds an upper half block");
+        var top = buffer.get(0, 0).style.fg;
+        var bottom = buffer.get(0, 0).style.bg;
+        assert(Type.enumEq(top, Color.Rgb(255, 0, 0)), "the character is the pixel above the line");
+        assert(Type.enumEq(bottom, Color.Rgb(0, 0, 0)), "and the background the one below it");
+
+        // --- Sixel, read back ---
+        var sixel = cui.render.Sixel.encode(px.over(0, 0, 0));
+        assert(StringTools.startsWith(sixel, "\x1bP") && StringTools.endsWith(sixel, "\x1b\\"), "a sixel picture is one DCS string");
+        var back = readSixel(sixel, 4, 3);
+        assert(back != null, "and it parses back");
+        // Every pixel, against the same picture quantised to the cube: what
+        // comes out of the encoder is what a terminal will paint.
+        var wrong = 0;
+        for (y in 0...3) for (x in 0...4) {
+            var want = cui.render.Sixel.index(flat.red(x, y), flat.green(x, y), flat.blue(x, y));
+            var got = cui.render.Sixel.index(back.red(x, y), back.green(x, y), back.blue(x, y));
+            if (want != got) wrong++;
+        }
+        assert(wrong == 0, "every pixel comes back the colour it went in, to the palette (" + wrong + " wrong)");
+        assert(back.red(0, 0) == cui.render.Sixel.value(5) && back.green(0, 0) == 0, "the red one being red");
+
+        // --- kitty, read back ---
+        var kitty = cui.render.Kitty.encode(px, 2, 1);
+        assert(kitty.indexOf("a=T,q=2,f=32,s=4,v=3,c=2,r=1") > 0, "a kitty picture says its size in pixels and in cells");
+        var payload = kitty.substring(kitty.indexOf(";") + 1, kitty.indexOf("\x1b\\", 2));
+        var raw = haxe.crypto.Base64.decode(payload);
+        assert(raw.length == 4 * 3 * 4, "and carries every pixel, unquantised");
+        assert(raw.get(0) == 255 && raw.get(1) == 0 && raw.get(3) == 255, "the first of them being the red one");
+
+        // --- What the terminal can do ---
+        cui.term.Graphics.say(HalfBlocks);
+        assert(cui.term.Graphics.sequence(px, 2, 1) == null, "with no protocol there is no sequence: the cells are drawn");
+        cui.term.Graphics.say(SixelGraphics, 10, 20);
+        var sized = cui.term.Graphics.sequence(px, 2, 1);
+        assert(sized != null && StringTools.startsWith(sized, "\x1bP"), "with Sixel there is one");
+        assert(sized.indexOf("\"1;1;20;20") > 0, "scaled to the cells it was given");
+        cui.term.Graphics.say(KittyGraphics);
+        assert(StringTools.startsWith(cui.term.Graphics.sequence(px, 2, 1), "\x1b_G"), "and with kitty, the other one");
+
+        // --- The buffer carries it, and the renderer writes it where it is ---
+        var withPicture = new Buffer(6, 2);
+        withPicture.graphic(2, 1, "\x1b_Gsomething\x1b\\");
+        assert(withPicture.graphics.length == 1, "a picture is recorded beside the cells");
+        withPicture.clear();
+        assert(withPicture.graphics.length == 0, "and cleared with them");
+    }
+
+    /**
+        A sixel string back into pixels, so the encoder is read rather than
+        believed. Six rows a band, `$` returns to the start of one and `-`
+        moves to the next; `!n` repeats the character that follows.
+    **/
+    static function readSixel(sixel:String, width:Int, height:Int):cui.render.Pixels {
+        var out = new cui.render.Pixels(width, height);
+        var palette = new Map<Int, {r:Int, g:Int, b:Int}>();
+        var at = sixel.indexOf("q") + 1;
+        var band = 0;
+        var x = 0;
+        var colour = 0;
+        while (at < sixel.length) {
+            var c = sixel.charAt(at);
+            if (c == "\x1b") break;
+            if (c == "\"") { // the size, which this reader takes from its caller
+                at++;
+                while (at < sixel.length && "0123456789;".indexOf(sixel.charAt(at)) >= 0) at++;
+                continue;
+            }
+            if (c == "#") {
+                at++;
+                var digits = "";
+                while (at < sixel.length && sixel.charAt(at) >= "0" && sixel.charAt(at) <= "9") digits += sixel.charAt(at++);
+                colour = Std.parseInt(digits);
+                x = 0;
+                if (at < sixel.length && sixel.charAt(at) == ";") {
+                    // A definition: ;2;r;g;b in percent.
+                    var numbers = [];
+                    while (at < sixel.length && (sixel.charAt(at) == ";" || (sixel.charAt(at) >= "0" && sixel.charAt(at) <= "9"))) {
+                        if (sixel.charAt(at) == ";") { numbers.push(""); at++; continue; }
+                        numbers[numbers.length - 1] += sixel.charAt(at++);
+                    }
+                    var value = function(i:Int) return Math.round(Std.parseInt(numbers[i]) * 255 / 100);
+                    palette.set(colour, {r: value(1), g: value(2), b: value(3)});
+                }
+                continue;
+            }
+            if (c == "$") { x = 0; at++; continue; }
+            if (c == "-") { band++; x = 0; at++; continue; }
+            var run = 1;
+            if (c == "!") {
+                at++;
+                var digits = "";
+                while (at < sixel.length && sixel.charAt(at) >= "0" && sixel.charAt(at) <= "9") digits += sixel.charAt(at++);
+                run = Std.parseInt(digits);
+                c = sixel.charAt(at);
+            }
+            at++;
+            var bits = c.charCodeAt(0) - 63;
+            if (bits < 0) continue;
+            for (_ in 0...run) {
+                for (row in 0...6) {
+                    if (bits & (1 << row) == 0) continue;
+                    var y = band * 6 + row;
+                    if (x < width && y < height) {
+                        var rgb = palette.get(colour);
+                        if (rgb != null) out.set(x, y, rgb.r, rgb.g, rgb.b, 255);
+                    }
+                }
+                x++;
+            }
+        }
+        return out;
+    }
+
     static function main():Void {
         Sys.println("CUI Test Suite\n");
 
@@ -460,6 +602,7 @@ class TestAll {
         testState();
         testTypedStates();
         testIconsAndPictures();
+        testPictures();
         testNuiSource();
         testNuiRenderer();
 
