@@ -1,0 +1,8 @@
+# Every icon of the shared vocabulary in a terminal, and pictures as their alt.
+#   haxe build-icons.hxml && ./bin-icons/IconsApp
+-lib rui
+-cp src
+-lib nui
+-cp examples/icons
+-main IconsApp
+-cpp bin-icons

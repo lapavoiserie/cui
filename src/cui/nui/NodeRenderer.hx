@@ -57,7 +57,19 @@ class NodeRenderer {
 				new cui.ui.HStack(kids, PropValueTools.asInt(props.get("spacing")));
 
 			case "Button":
-				new cui.ui.Button(PropValueTools.asString(props.get("label")), action(props.get("onClick")));
+				new cui.ui.Button(PropValueTools.asString(props.get("label")), action(props.get("onClick")),
+					props.exists("icon") ? PropValueTools.asString(props.get("icon")) : null);
+
+			case "Icon":
+				new cui.ui.Icon(PropValueTools.asString(props.get("name")),
+					props.exists("label") ? PropValueTools.asString(props.get("label")) : null);
+
+			case "Image":
+				new cui.ui.Image(PropValueTools.asString(props.get("src")), PropValueTools.asString(props.get("alt")), {
+					width: props.exists("width") ? PropValueTools.asFloat(props.get("width")) : null,
+					height: props.exists("height") ? PropValueTools.asFloat(props.get("height")) : null,
+					fit: props.exists("fit") ? PropValueTools.asString(props.get("fit")) : null
+				});
 
 			case "Spacer":
 				new cui.ui.Spacer();

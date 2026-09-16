@@ -105,7 +105,19 @@ class Describe {
 
 		// Most-derived first: ZStack and SafeArea extend VStack, the mui
 		// facades extend the widgets. Order is the correctness here.
-		if (Std.isOfType(view, cui.ui.Text)) {
+		if (Std.isOfType(view, cui.ui.Icon)) {
+			var i:cui.ui.Icon = cast view;
+			out = new Node("Icon").prop("name", PString(i.name));
+			if (i.label != null && i.label != "") out.prop("label", PString(i.label));
+
+		} else if (Std.isOfType(view, cui.ui.Image)) {
+			var p:cui.ui.Image = cast view;
+			out = new Node("Image").prop("src", PString(p.src)).prop("alt", PString(p.alt));
+			if (p.drawWidth != null) out.prop("width", PFloat(p.drawWidth));
+			if (p.drawHeight != null) out.prop("height", PFloat(p.drawHeight));
+			if (p.fit != "contain") out.prop("fit", PString(p.fit));
+
+		} else if (Std.isOfType(view, cui.ui.Text)) {
 			var t:cui.ui.Text = cast view;
 			out = new Node("Text").prop("text", PString(t.content));
 
@@ -114,6 +126,7 @@ class Describe {
 			out = new Node("Button")
 				.prop("label", PString(b.label))
 				.prop("onClick", PCallback(b.action));
+			if (b.icon != null) out.prop("icon", PString(b.icon));
 
 		} else if (Std.isOfType(view, cui.ui.Checkbox)) {
 			var c:cui.ui.Checkbox = cast view;

@@ -44,10 +44,18 @@ six of them honest.
 `mui_owns_main` flag, so an application writes its `main()` once instead of
 guarding it with a list of backend names.
 
-`cui` provides no `Image`: a terminal has no pixels to put one in, and
-`mui.Contract` marks that entry optional — so `mui.ui.Image` simply does not
-exist on this backend, and reaching for it is a compile error at the line that
-reached.
+`cui` has an `Image` that draws no pixels: a terminal has none to put one in
+yet, so the picture stands in as its `alt`, in brackets, the way a text browser
+shows one it cannot fetch. The pixels come with the terminal graphics protocols
+— Sixel first — and only the drawing changes when they do; the node and its
+props are the canon's.
+
+`Icon` is one character per name (`cui.nui.Icons`), chosen so a panel's columns
+hold: an old, widely cut character rather than an emoji, which is two cells wide
+in some terminals and a box in others. An `-off` name is its base with a
+combining stroke, drawn in the same cell — `cui.render.Buffer` keeps a combining
+mark with the character it belongs to, which also keeps text with a decomposed
+accent aligned. `Button` takes an icon name too.
 
 `ScrollView` and `TabView` take a **trailing optional** argument the contract
 does not name, so an application can own the scroll offset and the tab

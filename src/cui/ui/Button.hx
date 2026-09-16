@@ -12,13 +12,34 @@ import cui.render.Style;
 class Button extends View {
     public var label(default, null):String;
 
+    /**
+        A name from the shared vocabulary (`nui.Icons`), drawn as its character
+        before the label -- or alone, when the label is empty.
+    **/
+    public var icon(default, null):Null<String>;
+
     var action:Void->Void;
 
-    public function new(label:String, action:Void->Void) {
+    public function new(label:String, action:Void->Void, ?icon:String) {
         super();
         this.label = label;
         this.action = action;
+        this.icon = icon != null && cui.nui.Icons.glyphOf(icon) != null ? icon : null;
         this.focusable = true;
+    }
+
+    /** What sits between the brackets: the character, a space, the label. **/
+    function inside():String {
+        var glyph = icon == null ? null : cui.nui.Icons.glyphOf(icon);
+        if (glyph == null) return label;
+        return label == "" ? glyph : glyph + " " + label;
+    }
+
+    /** Cells, not code points: a stroked character is two of them in one cell. **/
+    function insideWidth():Int {
+        var glyph = icon == null ? null : cui.nui.Icons.glyphOf(icon);
+        if (glyph == null) return label.length;
+        return label == "" ? 1 : 2 + label.length;
     }
 
     /**
@@ -35,7 +56,7 @@ class Button extends View {
     override public function measure(constraint:Constraint):Size {
         var insets = getInsets();
         // Button renders as: [ label ] with 1 cell padding on each side
-        var contentW = label.length + 4; // "[ " + label + " ]"
+        var contentW = insideWidth() + 4; // "[ " + what is inside + " ]"
         var fw = getFixedWidth();
         var fh = getFixedHeight();
         return new Size(
@@ -64,12 +85,13 @@ class Button extends View {
             renderStyle.inverse = true;
         }
 
-        var display = "[ " + label + " ]";
+        var display = "[ " + inside() + " ]";
+        var cells = insideWidth() + 4;
         var align = getAlignment();
         var xOffset = switch (align) {
             case Left: 0;
-            case Center: Std.int((inner.width - display.length) / 2);
-            case Right: inner.width - display.length;
+            case Center: Std.int((inner.width - cells) / 2);
+            case Right: inner.width - cells;
         };
         if (xOffset < 0) xOffset = 0;
 

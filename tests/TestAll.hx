@@ -379,6 +379,68 @@ class TestAll {
 
     // --- Main ---
 
+    // --- Icons and pictures ---
+
+    static function testIconsAndPictures():Void {
+        section("Icons and pictures");
+
+        var missing = [for (n in nui.Icons.NAMES) if (cui.nui.Icons.glyphOf(n) == null) n];
+        assert(missing.length == 0, "every name of the vocabulary has a character: " + missing);
+        assert(Lambda.count(cui.nui.Icons.GLYPHS) == nui.Icons.NAMES.length, "and nothing else has one");
+        assert(cui.nui.Icons.glyphOf("mic-off") == cui.nui.Icons.glyphOf("mic") + cui.nui.Icons.STROKE,
+            "an -off name is its base, stroked");
+
+        var icon = new cui.ui.Icon("mic-off");
+        assert(icon.measure(Unbounded).width == 1, "a stroked icon is one cell wide, not two");
+        var buf = new Buffer(6, 1);
+        icon.render(buf, new Rect(0, 0, 6, 1));
+        assert(buf.get(0, 0).char == cui.nui.Icons.glyphOf("mic-off"), "and the cell holds both code points");
+
+        var newer = new cui.ui.Icon("teleport", "Teleport");
+        assert(newer.display() == "Teleport", "a name with no character is its label");
+        assert(new cui.ui.Icon("teleport").display() == "teleport", "or the name, spoken");
+
+        var picture = new cui.ui.Image("asset:logo.png", "Farceur", {width: 120});
+        assert(picture.display() == "[Farceur]", "a picture is its alt, in brackets");
+        assert(new cui.ui.Image("asset:logo.png").display() == "[picture]", "and says so when it has none");
+        var pbuf = new Buffer(12, 1);
+        picture.render(pbuf, new Rect(0, 0, 12, 1));
+        assert(pbuf.get(0, 0).char == "[" && pbuf.get(1, 0).char == "F", "drawn where it stands");
+
+        var take = new cui.ui.Button("TAKE", () -> {}, "swap");
+        assert(take.measure(Unbounded).width == 4 + 2 + 4, "a button with an icon leaves room for it");
+        var bbuf = new Buffer(20, 1);
+        take.render(bbuf, new Rect(0, 0, 20, 1));
+        assert(bbuf.get(2, 0).char == cui.nui.Icons.glyphOf("swap") && bbuf.get(4, 0).char == "T",
+            "the character comes before the label");
+        assert(new cui.ui.Button("Cut", () -> {}, "cut").icon == null, "a name outside the vocabulary is no icon");
+
+        // --- The wire ---
+        var described = cui.nui.Describe.describe(new VStack([
+            new cui.ui.Image("asset:logo.png", "Farceur", {width: 120, fit: "cover"}),
+            new cui.ui.Icon("mic-off", "Muted"),
+            new cui.ui.Button("TAKE", () -> {}, "swap")
+        ]));
+        var img = described.children[0];
+        assert(img.type == "Image" && nui.PropValue.PropValueTools.asString(img.props.get("src")) == "asset:logo.png"
+            && nui.PropValue.PropValueTools.asString(img.props.get("alt")) == "Farceur"
+            && nui.PropValue.PropValueTools.asFloat(img.props.get("width")) == 120
+            && nui.PropValue.PropValueTools.asString(img.props.get("fit")) == "cover", "a picture crosses as src, alt, width and fit");
+        assert(described.children[1].type == "Icon"
+            && nui.PropValue.PropValueTools.asString(described.children[1].props.get("name")) == "mic-off"
+            && nui.PropValue.PropValueTools.asString(described.children[1].props.get("label")) == "Muted", "an icon as its name and label");
+        assert(nui.PropValue.PropValueTools.asString(described.children[2].props.get("icon")) == "swap", "a button carries its icon");
+
+        var built = NodeRenderer.build(new nui.Node("VStack")
+            .child(new nui.Node("Image").prop("src", PString("asset:x.png")).prop("alt", PString("x")))
+            .child(new nui.Node("Icon").prop("name", PString("star")))
+            .child(new nui.Node("Button").prop("label", PString("Go")).prop("icon", PString("forward"))));
+        var kids:Array<View> = built.children;
+        assert(Std.isOfType(kids[0], cui.ui.Image) && (cast kids[0] : cui.ui.Image).alt == "x", "a received picture is one");
+        assert(Std.isOfType(kids[1], cui.ui.Icon) && (cast kids[1] : cui.ui.Icon).name == "star", "a received icon is one");
+        assert((cast kids[2] : cui.ui.Button).icon == "forward", "a received button keeps its icon");
+    }
+
     static function main():Void {
         Sys.println("CUI Test Suite\n");
 
@@ -397,6 +459,7 @@ class TestAll {
         testBoxBorder();
         testState();
         testTypedStates();
+        testIconsAndPictures();
         testNuiSource();
         testNuiRenderer();
 
