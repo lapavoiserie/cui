@@ -79,6 +79,37 @@ class NodeRenderer {
 					fit: props.exists("fit") ? PropValueTools.asString(props.get("fit")) : null
 				});
 
+			// The three editable controls a tree can carry. They were missing:
+			// cui DESCRIBED a Toggle, a Slider and a TextInput outward and drew
+			// none of them inward, so a received panel showed "?Toggle" where a
+			// switch should be -- and cui hosts Companion, so that was a real
+			// panel and not a hypothesis.
+			case "Toggle":
+				var on = PropValueTools.asBool(props.get("isOn"));
+				var tell = flag(props.get("onToggle"));
+				new cui.ui.Checkbox(PropValueTools.asString(props.get("label")),
+					new cui.ui.Checkbox.CheckboxBinding(() -> on, v -> tell(v)));
+
+			case "Slider":
+				var at = PropValueTools.asFloat(props.get("value"));
+				var tell = number(props.get("onValue"));
+				var low = props.exists("min") ? PropValueTools.asFloat(props.get("min")) : 0.0;
+				var high = props.exists("max") ? PropValueTools.asFloat(props.get("max")) : 1.0;
+				new cui.ui.Slider(new cui.ui.Slider.SliderBinding(() -> at, v -> tell(v)),
+					low, high);
+
+			case "TextInput":
+				var was = PropValueTools.asString(props.get("text"));
+				var tell = words(props.get("onText"));
+				var field = new cui.ui.Input(
+					new cui.state.Binding(() -> was, v -> tell(v)),
+					PropValueTools.asString(props.get("placeholder")));
+				// The value is the sender's and arrives a keystroke behind, so
+				// the field keeps what was typed until it loses focus. nui's
+				// canon states the rule; `pui` paid for not having it.
+				field.receivesValue = true;
+				field;
+
 			case "Picker":
 				// The options are the `Text` children, which is what the canon
 				// says they are -- read here rather than from a prop, since a
@@ -144,6 +175,52 @@ class NodeRenderer {
 		reaches `Std.parseFloat`, and answers NaN. Stringified rather than cast,
 		and a picker in a tree built in this process gets the Int it declared.
 	**/
+	/**
+		A callback that carries a `Bool`, whatever shape it arrived in.
+
+		The three below are the same idea as `select`, one per value a control
+		reports. Every one of them stringifies rather than casting for a tree
+		that crossed a wire, where each action is a string callback: an index,
+		a level or a flag cast into that slot reaches `Std.parseFloat` and
+		answers NaN, which is how `pui` lost every received slider for a while.
+	**/
+	static function flag(v:Null<PropValue>):Bool->Void {
+		var r = PropValueTools.resolve(v);
+		if (r == null) return function(_) {};
+		return switch (r) {
+			case PCallbackBool(fn): fn;
+			case PCallbackString(fn): function(on) fn(on ? "true" : "false");
+			case PCallbackInt(fn): function(on) fn(on ? 1 : 0);
+			case PCallbackFloat(fn): function(on) fn(on ? 1 : 0);
+			case PCallback(fn): function(_) fn();
+			case _: function(_) {};
+		}
+	}
+
+	/** A callback that carries a level. **/
+	static function number(v:Null<PropValue>):Float->Void {
+		var r = PropValueTools.resolve(v);
+		if (r == null) return function(_) {};
+		return switch (r) {
+			case PCallbackFloat(fn): fn;
+			case PCallbackInt(fn): function(x) fn(Std.int(x));
+			case PCallbackString(fn): function(x) fn(Std.string(x));
+			case PCallback(fn): function(_) fn();
+			case _: function(_) {};
+		}
+	}
+
+	/** A callback that carries the whole text, never the key. **/
+	static function words(v:Null<PropValue>):String->Void {
+		var r = PropValueTools.resolve(v);
+		if (r == null) return function(_) {};
+		return switch (r) {
+			case PCallbackString(fn): fn;
+			case PCallback(fn): function(_) fn();
+			case _: function(_) {};
+		}
+	}
+
 	static function select(v:Null<PropValue>):Int->Void {
 		var r = PropValueTools.resolve(v);
 		if (r == null) return function(_) {};

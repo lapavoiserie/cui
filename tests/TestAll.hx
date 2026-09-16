@@ -822,6 +822,118 @@ class TestAll {
         return out;
     }
 
+    /**
+        Typing into a field, and moving the caret while doing it.
+
+        cui rebuilds the whole tree on every state write, so the field object is
+        thrown away mid-word. The caret used to live in that object and the
+        constructor put it at the end of the text, so moving it was impossible:
+        Left decremented it, asked for a redraw, and the redraw built a field
+        whose caret was at the end again. Typing worked only because the end is
+        where it already wanted to be.
+
+        Measured in a terminal before it was fixed: `abc`, Left, Left, `X` gave
+        `abcX`.
+    **/
+    static function testEditing():Void {
+        section("Editing a field");
+
+        var value = new cui.state.State<String>("", "value");
+        var field = new cui.ui.Input(cui.state.Binding.from(value), "Name");
+        var page = new VStack([field], 0);
+
+        // A field is reached through focus, so the ring has to exist and hold
+        // it -- the caret is kept per slot of that ring, never per object.
+        View.focusManager = new cui.focus.FocusManager();
+        View.focusManager.buildFocusRing(page);
+
+        for (c in ["a", "b", "c"]) {
+            field.handleEvent(Key(new cui.event.KeyEvent.KeyEvent(Char(c))));
+            // What the loop does after every write: a new tree, a new field.
+            page = new VStack([field = new cui.ui.Input(cui.state.Binding.from(value), "Name")], 0);
+            View.focusManager.buildFocusRing(page);
+        }
+        assert(value.get() == "abc", "three letters land in order (\"" + value.get() + "\")");
+
+        field.handleEvent(Key(new cui.event.KeyEvent.KeyEvent(Left)));
+        field.handleEvent(Key(new cui.event.KeyEvent.KeyEvent(Left)));
+        // A caret move rebuilds too -- it asks for the redraw itself.
+        page = new VStack([field = new cui.ui.Input(cui.state.Binding.from(value), "Name")], 0);
+        View.focusManager.buildFocusRing(page);
+
+        field.handleEvent(Key(new cui.event.KeyEvent.KeyEvent(Char("X"))));
+        assert(value.get() == "aXbc",
+            "and the caret stays where it was put, across the rebuild (\"" + value.get() + "\")");
+
+        field.handleEvent(Key(new cui.event.KeyEvent.KeyEvent(Home)));
+        field.handleEvent(Key(new cui.event.KeyEvent.KeyEvent(Char("0"))));
+        assert(value.get() == "0aXbc", "Home reaches the front (\"" + value.get() + "\")");
+
+        View.focusManager = null;
+    }
+
+    /**
+        The editable controls of a tree that arrived.
+
+        cui described a Toggle, a Slider and a TextInput outward and drew none
+        of them inward: a received panel showed `?Toggle` where a switch should
+        be. cui hosts Companion, so that was a real panel.
+    **/
+    static function testReceivedControls():Void {
+        section("Received controls");
+
+        var flipped:Array<Bool> = [];
+        var toggle = NodeRenderer.build(new nui.Node("Toggle")
+            .prop("label", nui.PropValue.PString("Tally"))
+            .prop("isOn", nui.PropValue.PBool(true))
+            .prop("onToggle", nui.PropValue.PCallbackBool(v -> flipped.push(v))));
+        assert(Std.isOfType(toggle, cui.ui.Checkbox), "a received Toggle is a checkbox");
+        var shown = new Buffer(30, 1);
+        toggle.render(shown, new Rect(0, 0, 30, 1));
+        assert(row(shown, 1).indexOf("Tally") > 0, "with the label it was sent");
+        assert(row(shown, 1).indexOf("✓") >= 0, "and ticked, as it was sent");
+        toggle.handleEvent(Key(new cui.event.KeyEvent.KeyEvent(Enter)));
+        assert(flipped.length == 1 && flipped[0] == false, "flipping it reports the new value");
+
+        var levels:Array<Float> = [];
+        var slider = NodeRenderer.build(new nui.Node("Slider")
+            .prop("value", nui.PropValue.PFloat(0.5))
+            .prop("min", nui.PropValue.PFloat(0))
+            .prop("max", nui.PropValue.PFloat(1))
+            .prop("onValue", nui.PropValue.PCallbackFloat(v -> levels.push(v))));
+        assert(Std.isOfType(slider, cui.ui.Slider), "a received Slider is a slider");
+        var bar = new Buffer(30, 1);
+        slider.render(bar, new Rect(0, 0, 30, 1));
+        assert(row(bar, 1).indexOf("50%") > 0, "showing the level it was sent");
+        slider.handleEvent(Key(new cui.event.KeyEvent.KeyEvent(Right)));
+        assert(levels.length == 1 && levels[0] > 0.5, "and a drag reports a bigger one");
+
+        // A field of a received tree: what it shows while being typed in is
+        // what was typed, not what the sender last said. The sender here never
+        // answers at all, which is the worst case of being behind.
+        var typed:Array<String> = [];
+        var node = new nui.Node("TextInput")
+            .prop("text", nui.PropValue.PString("Fondu"))
+            .prop("onText", nui.PropValue.PCallbackString(s -> typed.push(s)));
+        var received = NodeRenderer.build(node);
+        var panel = new VStack([received], 0);
+        View.focusManager = new cui.focus.FocusManager();
+        View.focusManager.buildFocusRing(panel);
+
+        received.handleEvent(Key(new cui.event.KeyEvent.KeyEvent(Char("A"))));
+        // The rebuild the keystroke caused, with the sender still behind.
+        received = NodeRenderer.build(node);
+        panel = new VStack([received], 0);
+        View.focusManager.buildFocusRing(panel);
+        received.handleEvent(Key(new cui.event.KeyEvent.KeyEvent(Char("B"))));
+
+        assert(typed[typed.length - 1] == "FonduAB",
+            "a received field keeps what was typed while its sender is behind (\""
+            + typed[typed.length - 1] + "\")");
+
+        View.focusManager = null;
+    }
+
     static function main():Void {
         Sys.println("CUI Test Suite\n");
 
@@ -846,6 +958,8 @@ class TestAll {
         testNuiSource();
         testNuiRenderer();
         testPicker();
+        testEditing();
+        testReceivedControls();
 
         Sys.println('\n$passed passed, $failed failed');
         if (failed > 0) Sys.exit(1);

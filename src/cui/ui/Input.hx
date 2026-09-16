@@ -13,14 +13,112 @@ import cui.state.Binding;
 class Input extends View {
     var binding:Binding<String>;
     var placeholder:String;
-    var cursorPos:Int;
+
+    /**
+        Where the caret is, and whose it is -- kept across the rebuild that
+        typing causes.
+
+        cui rebuilds the whole tree on every state write, so this object is
+        thrown away mid-word and the constructor put the caret back at the end
+        of the text. Moving the caret was therefore impossible: `Left`
+        decremented it, asked for a redraw, and the redraw built a fresh field
+        whose caret was at the end again. Typing appeared to work only because
+        the end is where it already wanted to be; editing in the middle of a
+        word never did. `abc`, Left, Left, `X` gave `abcX`.
+
+        **Keyed by the focus index, not by the view.** Identity in cui is the
+        place and never the pointer -- a rebuilt tree is all new objects and the
+        same ring -- and only the focused field has a caret worth keeping, so
+        one slot is enough. The same argument `pui.ui.TextInput` makes for its
+        blink phase.
+    **/
+    static var caretOwner:Int = -1;
+
+    static var caret:Int = 0;
+
+    /**
+        The text the caret was last placed against.
+
+        The focus index alone is not an identity: another tree can put a
+        different field in the same slot, and the caret would carry over into
+        it. So the caret is kept only while the text under it is still the text
+        it was measured against -- every edit and every move records the value
+        it left behind. A value changed from elsewhere therefore sends the caret
+        to the end, which is the same answer as a field just focused.
+    **/
+    static var caretText:String = "";
+
+    /**
+        What has been typed into a received field but has not come back yet.
+
+        The rule nui's canon states for a `TextInput`: a received value is not
+        applied to a field somebody is typing in. Only meaningful when
+        `receivesValue` is set -- for an ordinary field the binding is written
+        by the field and read straight back, and there is nothing to reconcile.
+    **/
+    static var draftOwner:Int = -1;
+
+    static var draft:Null<String> = null;
+
+    /**
+        Whether this field's value is somebody else's: set by
+        `cui.nui.NodeRenderer` for a field built from a received tree, whose
+        binding is fabricated afresh on every build from a node that lags a
+        keystroke or two behind while somebody types.
+    **/
+    public var receivesValue:Bool = false;
 
     public function new(binding:Binding<String>, placeholder:String = "") {
         super();
         this.binding = binding;
         this.placeholder = placeholder;
-        this.cursorPos = binding.get().length;
         this.focusable = true;
+    }
+
+    /** Which slot of the focus ring this field is, or -1 when it has none. **/
+    inline function slot():Int {
+        return View.focusManager == null ? -1 : View.focusManager.focusIndex;
+    }
+
+    /** What the field shows: the binding, or the draft while it is being typed in. **/
+    function text():String {
+        if (receivesValue && isFocused() && draft != null && draftOwner == slot()) return draft;
+        return binding.get();
+    }
+
+    /** Where the caret is. At the end of the text for a field nobody is in. **/
+    function cursor():Int {
+        var now = text();
+        if (!isFocused()) return now.length;
+        if (caretOwner != slot() || caretText != now) {
+            caretOwner = slot();
+            caretText = now;
+            caret = now.length;
+        }
+        if (caret > now.length) caret = now.length;
+        if (caret < 0) caret = 0;
+        return caret;
+    }
+
+    function setCursor(at:Int):Void {
+        caretOwner = slot();
+        caretText = text();
+        caret = at;
+    }
+
+    /** Write an edit: the draft first, so the rebuild cannot land between them. **/
+    function commit(value:String, at:Int):Void {
+        if (receivesValue) {
+            draft = value;
+            draftOwner = slot();
+        }
+        // The caret is recorded against the value being written, not the one
+        // being replaced: the rebuild rides on `binding.set` below, and the
+        // field that comes back has to recognise its own text.
+        caretOwner = slot();
+        caretText = value;
+        caret = at;
+        binding.set(value);
     }
 
     override public function measure(constraint:Constraint):Size {
@@ -51,8 +149,9 @@ class Input extends View {
         }
 
         var inner = area.inner(insets);
-        var text = binding.get();
+        var text = this.text();
         var focused = isFocused();
+        var cursorPos = cursor();
 
         if (text.length == 0 && !focused) {
             // Show placeholder
@@ -99,47 +198,46 @@ class Input extends View {
     override public function handleEvent(event:Event):Bool {
         switch (event) {
             case Key(key):
-                var text = binding.get();
+                var text = this.text();
+                var cursorPos = cursor();
                 switch (key.code) {
                     case Char(c):
                         if (!key.ctrl && !key.alt) {
                             // Insert character at cursor position
-                            var newText = text.substr(0, cursorPos) + c + text.substr(cursorPos);
-                            binding.set(newText);
-                            cursorPos++;
+                            commit(text.substr(0, cursorPos) + c + text.substr(cursorPos), cursorPos + 1);
                             return true;
                         }
                     case Backspace:
                         if (cursorPos > 0) {
-                            var newText = text.substr(0, cursorPos - 1) + text.substr(cursorPos);
-                            binding.set(newText);
-                            cursorPos--;
+                            commit(text.substr(0, cursorPos - 1) + text.substr(cursorPos), cursorPos - 1);
                             return true;
                         }
                     case Delete:
                         if (cursorPos < text.length) {
-                            var newText = text.substr(0, cursorPos) + text.substr(cursorPos + 1);
-                            binding.set(newText);
+                            commit(text.substr(0, cursorPos) + text.substr(cursorPos + 1), cursorPos);
                             return true;
                         }
+                    // A caret move is not an edit: it writes no value, so it
+                    // asks for the redraw itself. It survives that redraw
+                    // because the caret is not in this object.
                     case Left:
                         if (cursorPos > 0) {
-                            cursorPos--;
+                            setCursor(cursorPos - 1);
                             cui.state.State.StateBase.markDirty();
-                            return true;
                         }
+                        return true;
                     case Right:
                         if (cursorPos < text.length) {
-                            cursorPos++;
+                            setCursor(cursorPos + 1);
                             cui.state.State.StateBase.markDirty();
-                            return true;
                         }
+                        return true;
                     case Home:
-                        cursorPos = 0;
+                        setCursor(0);
                         cui.state.State.StateBase.markDirty();
                         return true;
                     case End:
-                        cursorPos = text.length;
+                        setCursor(text.length);
                         cui.state.State.StateBase.markDirty();
                         return true;
                     default:
