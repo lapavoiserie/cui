@@ -68,6 +68,19 @@ class Input extends View {
     **/
     public var receivesValue:Bool = false;
 
+    /**
+        What Enter does, if anything.
+
+        nui's canon states the pair: `onText` says the value is live, every
+        keystroke worth hearing; `onSubmit` says it is an act -- a page address
+        that would load on every letter, a path, a name that saves. A field
+        carrying only the second keeps what is being typed and tells nobody
+        until this runs.
+
+        Null for a field with no such act, and then Enter is not this view's key.
+    **/
+    public var onSubmit:Null<Void->Void> = null;
+
     public function new(binding:Binding<String>, placeholder:String = "") {
         super();
         this.binding = binding;
@@ -232,6 +245,15 @@ class Input extends View {
                             cui.state.State.StateBase.markDirty();
                         }
                         return true;
+                    // Submitting is an act: some fields report only here.
+                    case Enter:
+                        if (onSubmit != null) {
+                            onSubmit();
+                            cui.state.State.StateBase.markDirty();
+                            return true;
+                        }
+                        return false;
+
                     case Home:
                         setCursor(0);
                         cui.state.State.StateBase.markDirty();

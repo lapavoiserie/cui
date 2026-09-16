@@ -108,6 +108,10 @@ class NodeRenderer {
 				// the field keeps what was typed until it loses focus. nui's
 				// canon states the rule; `pui` paid for not having it.
 				field.receivesValue = true;
+				// A field carrying `onSubmit` and no `onText` reports nothing
+				// until Enter: the canon's shape for a value whose effect is an
+				// act rather than a running total.
+				if (props.exists("onSubmit")) field.onSubmit = action(props.get("onSubmit"));
 				field;
 
 			case "Picker":
