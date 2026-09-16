@@ -17,18 +17,34 @@ class Icons {
 	/** A combining long solidus overlay: the stroke of an `-off` name. **/
 	public static inline var STROKE = "̸";
 
+	/**
+		Variation selector 15: "draw this one as text, not as an emoji".
+
+		Several of these characters have two faces, and a terminal that picks
+		the emoji one draws it **two cells wide and in colour** -- Windows
+		Terminal does -- so the name beside the icon collides with it. Asking
+		for the text face is what the selector is for, and a terminal with no
+		emoji face for that character ignores it. It lives in the cell of the
+		character it follows (`cui.render.Buffer`), so an icon is one cell
+		whichever face is drawn.
+
+		Found on Windows by the Farceur session: `settings`, `warning`, `mail`,
+		`phone` and `person` came out wide and coloured.
+	**/
+	public static inline var AS_TEXT = "︎";
+
 	public static final GLYPHS:Map<String, String> = [
 		// general
 		"add" => "+", "close" => "×", "check" => "✓", "delete" => "⌫",
-		"edit" => "✎", "search" => "⌕", "settings" => "⚙", "home" => "⌂",
-		"info" => "ⓘ", "warning" => "⚠", "error" => "⊗", "menu" => "≡",
+		"edit" => "✎", "search" => "⌕", "settings" => "⚙" + AS_TEXT, "home" => "⌂",
+		"info" => "ⓘ", "warning" => "⚠" + AS_TEXT, "error" => "⊗", "menu" => "≡",
 		"more" => "…", "refresh" => "↻", "share" => "⇪", "star" => "★",
-		"person" => "☺", "lock" => "⚿", "unlock" => "⚷", "mail" => "✉",
-		"phone" => "☎", "save" => "⇩",
+		"person" => "☺" + AS_TEXT, "lock" => "⚿", "unlock" => "⚷", "mail" => "✉" + AS_TEXT,
+		"phone" => "☎" + AS_TEXT, "save" => "⇩",
 		// direction
 		"back" => "‹", "forward" => "›", "up" => "˄", "down" => "˅",
 		// media
-		"play" => "▶", "pause" => "‖", "stop" => "■", "record" => "●",
+		"play" => "▶" + AS_TEXT, "pause" => "‖", "stop" => "■", "record" => "●",
 		"swap" => "⇄", "broadcast" => "⦿",
 		"mic" => "♪", "mic-off" => "♪" + STROKE,
 		"speaker" => "♫", "speaker-off" => "♫" + STROKE,

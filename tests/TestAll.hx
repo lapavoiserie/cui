@@ -480,16 +480,34 @@ class TestAll {
         assert(StringTools.startsWith(sixel, "\x1bP") && StringTools.endsWith(sixel, "\x1b\\"), "a sixel picture is one DCS string");
         var back = readSixel(sixel, 4, 3);
         assert(back != null, "and it parses back");
-        // Every pixel, against the same picture quantised to the cube: what
-        // comes out of the encoder is what a terminal will paint.
-        var wrong = 0;
-        for (y in 0...3) for (x in 0...4) {
-            var want = cui.render.Sixel.index(flat.red(x, y), flat.green(x, y), flat.blue(x, y));
-            var got = cui.render.Sixel.index(back.red(x, y), back.green(x, y), back.blue(x, y));
-            if (want != got) wrong++;
+        // A picture of no more than 256 colours takes its own as the palette,
+        // so the only thing lost is the format's own step: a Sixel colour is a
+        // percentage of each channel, which is 255 in a hundred parts.
+        var off = 0;
+        for (y in 0...3) for (x in 0...4)
+            for (channel in [
+                Std.int(Math.abs(back.red(x, y) - flat.red(x, y))),
+                Std.int(Math.abs(back.green(x, y) - flat.green(x, y))),
+                Std.int(Math.abs(back.blue(x, y) - flat.blue(x, y)))
+            ]) if (channel > off) off = channel;
+        assert(off <= 2, "a picture of few colours keeps them all, to the format's own step (worst " + off + ")");
+
+        // More colours than registers: the palette is cut from the picture,
+        // and what comes back is close rather than stepped. A gradient through
+        // a fixed cube of 216 was what the Farceur switcher saw in steps.
+        var gradient = new cui.render.Pixels(64, 6);
+        for (y in 0...6) for (x in 0...64)
+            gradient.set(x, y, Std.int(x * 4 + y), Std.int(255 - x * 3), Std.int((x * 7 + y * 11) % 256), 255);
+        var read = readSixel(cui.render.Sixel.encode(gradient), 64, 6);
+        var worst = 0;
+        for (y in 0...6) for (x in 0...64) {
+            for (channel in [
+                Std.int(Math.abs(read.red(x, y) - gradient.red(x, y))),
+                Std.int(Math.abs(read.green(x, y) - gradient.green(x, y))),
+                Std.int(Math.abs(read.blue(x, y) - gradient.blue(x, y)))
+            ]) if (channel > worst) worst = channel;
         }
-        assert(wrong == 0, "every pixel comes back the colour it went in, to the palette (" + wrong + " wrong)");
-        assert(back.red(0, 0) == cui.render.Sixel.value(5) && back.green(0, 0) == 0, "the red one being red");
+        assert(worst <= 8, "a picture of many colours comes back within a step of itself (worst " + worst + ")");
 
         // --- kitty, read back ---
         var kitty = cui.render.Kitty.encode(px, 2, 1);
@@ -506,6 +524,11 @@ class TestAll {
         var sized = cui.term.Graphics.sequence(px, 2, 1);
         assert(sized != null && StringTools.startsWith(sized, "\x1bP"), "with Sixel there is one");
         assert(sized.indexOf("\"1;1;20;20") > 0, "scaled to the cells it was given");
+        assert(cui.nui.Icons.glyphOf("settings") == "\u2699" + cui.nui.Icons.AS_TEXT,
+            "a character with an emoji face asks for the text one");
+        var wide = new Buffer(8, 1);
+        wide.writeString(0, 0, cui.nui.Icons.glyphOf("settings") + "gear", new Style());
+        assert(wide.get(1, 0).char == "g", "and the selector stays in its cell, so the name beside it does not move");
         cui.term.Graphics.say(KittyGraphics);
         assert(StringTools.startsWith(cui.term.Graphics.sequence(px, 2, 1), "\x1b_G"), "and with kitty, the other one");
 

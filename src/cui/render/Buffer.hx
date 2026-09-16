@@ -69,12 +69,20 @@ class Buffer {
         return written;
     }
 
-    /** The combining marks: they belong to the character before them. **/
+    /**
+        What belongs to the character before it: a combining mark, and a
+        variation selector.
+
+        A variation selector picks which of two faces a character is drawn
+        with -- U+FE0E asks for the text one, U+FE0F for the emoji -- and is
+        not a character on screen any more than an accent is.
+    **/
     static function combining(code:Int):Bool {
         return (code >= 0x0300 && code <= 0x036F) // diacriticals
             || (code >= 0x1AB0 && code <= 0x1AFF)
             || (code >= 0x1DC0 && code <= 0x1DFF)
             || (code >= 0x20D0 && code <= 0x20F0) // marks for symbols
+            || (code >= 0xFE00 && code <= 0xFE0F) // variation selectors
             || (code >= 0xFE20 && code <= 0xFE2F);
     }
 
