@@ -43,6 +43,7 @@ import nui.PropValue;
 @:access(cui.ui.Button)
 @:access(cui.ui.Checkbox)
 @:access(cui.ui.Slider)
+@:access(cui.ui.Picker)
 @:access(cui.ui.Input)
 @:access(cui.ui.ProgressBar)
 @:access(cui.ui.Tabs)
@@ -149,6 +150,19 @@ class Describe {
 				.prop("min", PFloat(s.min))
 				.prop("max", PFloat(s.max))
 				.prop("onValue", PCallbackFloat(v -> binding.set(v)));
+
+		} else if (Std.isOfType(view, cui.ui.Picker)) {
+			var p:cui.ui.Picker = cast view;
+			var binding = p.binding;
+			// One `Text` child per option, which is what nui's canon says a
+			// picker's options are. That this terminal cycles through them
+			// rather than dropping down is how it draws, and stops here.
+			out = new Node("Picker")
+				.prop("label", PString(p.label))
+				.prop("selectedIndex", PInt(p.index()))
+				.prop("onSelect", PCallbackInt(at -> binding.set(at)));
+			for (option in p.options)
+				out.child(new Node("Text").prop("text", PString(option)));
 
 		} else if (Std.isOfType(view, cui.ui.Input)) {
 			var i:cui.ui.Input = cast view;

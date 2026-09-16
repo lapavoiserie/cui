@@ -692,6 +692,97 @@ class TestAll {
         return out;
     }
 
+    /**
+        A choice among options, on the one row a terminal can give it.
+
+        The drawing is what is checked, not the intent: a picker that cycles is
+        only honest if the row says which option of how many is showing, and if
+        the arrow at the end of the list is dim. Read back out of the buffer,
+        because a control is proved by the cells it wrote.
+    **/
+    static function testPicker():Void {
+        section("Picker");
+
+        var at = new cui.state.State.IntState(0, "at");
+        var picker = new cui.ui.Picker("Transition", ["Cut", "Mix", "Wipe"],
+            cui.ui.Picker.PickerBinding.fromState(at));
+
+        var buf = new Buffer(30, 1);
+        picker.render(buf, new Rect(0, 0, 30, 1));
+        assert(row(buf, 1).indexOf("Transition") == 0, "the label is drawn");
+        assert(row(buf, 1).indexOf("Cut") > 0, "and the option chosen");
+        assert(row(buf, 1).indexOf("1/3") > 0,
+            "and which of how many, since only one shows (\"" + row(buf, 1) + "\")");
+
+        // Right moves on, Left comes back, and neither leaves the list.
+        picker.handleEvent(Key(new cui.event.KeyEvent.KeyEvent(Right)));
+        assert(at.get() == 1, "Right moves to the next option");
+        picker.handleEvent(Key(new cui.event.KeyEvent.KeyEvent(Left)));
+        picker.handleEvent(Key(new cui.event.KeyEvent.KeyEvent(Left)));
+        assert(at.get() == 0, "Left stops at the first, rather than going below it");
+
+        // Enter wraps: a list of two must be reachable with one key.
+        at.set(2);
+        picker.handleEvent(Key(new cui.event.KeyEvent.KeyEvent(Enter)));
+        assert(at.get() == 0, "Enter past the end comes back to the first");
+
+        // The row does not change width as it cycles, or a panel would shift
+        // under the eye every time somebody chose something.
+        at.set(0);
+        var narrow = new Buffer(30, 1);
+        picker.render(narrow, new Rect(0, 0, 30, 1));
+        at.set(2);
+        var wide = new Buffer(30, 1);
+        picker.render(wide, new Rect(0, 0, 30, 1));
+        assert(StringTools.rtrim(row(narrow, 1)).length == StringTools.rtrim(row(wide, 1)).length,
+            "the row keeps its width whatever is chosen");
+
+        // An empty list is legal, and must not be a crash.
+        var none = new cui.ui.Picker("Nothing", [], new cui.ui.Picker.PickerBinding(() -> 0, _ -> {}));
+        none.render(new Buffer(20, 1), new Rect(0, 0, 20, 1));
+        assert(none.index() == -1, "an empty picker chooses nothing");
+
+        // --- one that arrived as data ---
+        var reported = -1;
+        var node = new nui.Node("Picker")
+            .prop("label", nui.PropValue.PString("Source"))
+            .prop("selectedIndex", nui.PropValue.PInt(1))
+            .prop("onSelect", nui.PropValue.PCallbackInt(i -> reported = i));
+        for (option in ["CAM 1", "CAM 2"])
+            node.child(new nui.Node("Text").prop("text", nui.PropValue.PString(option)));
+
+        var received = NodeRenderer.build(node);
+        var rbuf = new Buffer(30, 1);
+        received.render(rbuf, new Rect(0, 0, 30, 1));
+        assert(row(rbuf, 1).indexOf("CAM 2") > 0, "a received picker shows the option it was sent");
+
+        received.handleEvent(Key(new cui.event.KeyEvent.KeyEvent(Left)));
+        assert(reported == 0, "and reports a choice rather than applying it");
+        var after = new Buffer(30, 1);
+        received.render(after, new Rect(0, 0, 30, 1));
+        assert(row(after, 1).indexOf("CAM 2") > 0,
+            "what it shows next is still the sender's, which is the rule for a received tree");
+
+        // Over a wire every action is a string callback: an index cast into
+        // that slot is the defect pui paid for, so it is stringified.
+        var text = "";
+        var inflated = new nui.Node("Picker")
+            .prop("selectedIndex", nui.PropValue.PInt(0))
+            .prop("onSelect", nui.PropValue.PCallbackString(s -> text = s));
+        inflated.child(new nui.Node("Text").prop("text", nui.PropValue.PString("a")));
+        inflated.child(new nui.Node("Text").prop("text", nui.PropValue.PString("b")));
+        NodeRenderer.build(inflated)
+            .handleEvent(Key(new cui.event.KeyEvent.KeyEvent(Right)));
+        assert(text == "1", "an index reaches a string callback as its text (\"" + text + "\")");
+    }
+
+    /** One rendered line, as text. **/
+    static function row(buf:Buffer, y:Int):String {
+        var out = "";
+        for (x in 0...buf.width) out += buf.get(x, y - 1).char;
+        return out;
+    }
+
     static function main():Void {
         Sys.println("CUI Test Suite\n");
 
@@ -715,6 +806,7 @@ class TestAll {
         testPictures();
         testNuiSource();
         testNuiRenderer();
+        testPicker();
 
         Sys.println('\n$passed passed, $failed failed');
         if (failed > 0) Sys.exit(1);

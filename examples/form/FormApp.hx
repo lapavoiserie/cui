@@ -13,6 +13,7 @@ import cui.ui.Spacer;
 import cui.ui.Button;
 import cui.ui.Input;
 import cui.ui.Checkbox;
+import cui.ui.Picker;
 
 class FormApp extends App {
     @:state var name:String = "";
@@ -20,6 +21,7 @@ class FormApp extends App {
     @:state var newsletter:Bool = true;
     @:state var terms:Bool = false;
     @:state var submitted:Bool = false;
+    @:state var transition:Int = 0;
 
     override public function body():View {
         if (submitted) {
@@ -32,6 +34,7 @@ class FormApp extends App {
                 new Text('Email:      $email'),
                 new Text('Newsletter: ${newsletter ? "Yes" : "No"}'),
                 new Text('Terms:      ${terms ? "Accepted" : "Not accepted"}'),
+                new Text('Transition: ${["Cut", "Mix", "Wipe", "Stinger"][transition]}'),
                 new Spacer(),
                 new Button("Back", () -> submitted = false),
             ], 1).padding(1).border(Rounded);
@@ -41,7 +44,7 @@ class FormApp extends App {
             new Text("CUI Form Demo")
                 .bold()
                 .foregroundColor(Color.Named(NamedColor.Cyan)),
-            new Text("Tab: navigate | Enter/Space: toggle | Click: focus")
+            new Text("Tab: navigate | Enter/Space: toggle | Left/Right: choose")
                 .dim(),
             new Spacer(),
             new HStack([
@@ -57,6 +60,8 @@ class FormApp extends App {
             new Spacer(),
             new Checkbox("Subscribe to newsletter", CheckboxBinding.fromState(newsletter_)),
             new Checkbox("I accept the terms", CheckboxBinding.fromState(terms_)),
+            new Picker("Transition", ["Cut", "Mix", "Wipe", "Stinger"],
+                PickerBinding.fromState(transition_)),
             new Spacer(),
             new HStack([
                 new Spacer(),

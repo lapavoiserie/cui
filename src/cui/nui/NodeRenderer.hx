@@ -79,6 +79,26 @@ class NodeRenderer {
 					fit: props.exists("fit") ? PropValueTools.asString(props.get("fit")) : null
 				});
 
+			case "Picker":
+				// The options are the `Text` children, which is what the canon
+				// says they are -- read here rather than from a prop, since a
+				// list does not fit in a `PropValue`.
+				var options = [
+					for (child in node.resolveChildren())
+						PropValueTools.asString(child.props.get("text"))
+				];
+				// The index shown is the sender's, and a choice is reported
+				// rather than applied: what this terminal shows next is
+				// whatever the sender says next. That is the rule for a tree
+				// that arrives as data, and the reason this binding keeps no
+				// copy of its own.
+				var chosen = props.get("selectedIndex");
+				var report = select(props.get("onSelect"));
+				new cui.ui.Picker(PropValueTools.asString(props.get("label")), options,
+					new cui.ui.Picker.PickerBinding(
+						() -> chosen == null ? -1 : PropValueTools.asInt(chosen),
+						at -> report(at)));
+
 			case "Spacer":
 				new cui.ui.Spacer();
 
@@ -112,6 +132,27 @@ class NodeRenderer {
 			case PCallbackFloat(fn): function() fn(0);
 			case PCallbackInt(fn): function() fn(0);
 			case _: function() {};
+		}
+	}
+
+	/**
+		A callback that carries the index chosen, whatever shape it arrived in.
+
+		The same lesson `pui` learned the hard way, in the other direction: a
+		tree that crossed a wire carries a **string** callback for every action,
+		so an index handed to one through a `cast` sits in a slot typed String,
+		reaches `Std.parseFloat`, and answers NaN. Stringified rather than cast,
+		and a picker in a tree built in this process gets the Int it declared.
+	**/
+	static function select(v:Null<PropValue>):Int->Void {
+		var r = PropValueTools.resolve(v);
+		if (r == null) return function(_) {};
+		return switch (r) {
+			case PCallbackInt(fn): fn;
+			case PCallbackFloat(fn): function(at) fn(at);
+			case PCallbackString(fn): function(at) fn(Std.string(at));
+			case PCallback(fn): function(_) fn();
+			case _: function(_) {};
 		}
 	}
 

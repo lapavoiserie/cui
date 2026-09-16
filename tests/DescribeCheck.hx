@@ -3,6 +3,8 @@ import mui.View;
 import mui.ui.Text;
 import mui.ui.VStack;
 import mui.ui.Button;
+import mui.ui.Picker;
+import mui.ui.PickerBinding;
 import mui.ui.Toggle;
 import mui.ui.ToggleBinding;
 import nui.Node;
@@ -31,12 +33,14 @@ class DescribeCheck extends App {
 	}
 
 	@:state var lit:Bool = false;
+	@:state var transition:Int = 1;
 
 	override function body():View {
 		return new VStack([
 			new Text("hello"),
 			new Button("Go", () -> taps.push("go")),
 			new Toggle("Lamp", (lit_ : ToggleBinding)),
+			new Picker("Transition", ["Cut", "Mix", "Wipe"], (transition_ : PickerBinding)),
 		], 8);
 	}
 
@@ -75,6 +79,20 @@ class DescribeCheck extends App {
 			case _:
 		}
 		check("a described binding writes back to the state", app.lit == true);
+
+		// A picker's options are children, not a prop: a list does not fit in a
+		// PropValue, and the canon says one Text child per option.
+		var pick = described.children[3];
+		check("Picker carries its label and the index chosen", pick.type == "Picker"
+			&& PropValueTools.asString(pick.props.get("label")) == "Transition"
+			&& PropValueTools.asInt(pick.props.get("selectedIndex")) == 1);
+		check("and one Text child per option", pick.children.length == 3
+			&& PropValueTools.asString(pick.children[2].props.get("text")) == "Wipe");
+		switch (PropValueTools.resolve(pick.props.get("onSelect"))) {
+			case PCallbackInt(fn): fn(2);
+			case _:
+		}
+		check("a choice made elsewhere reaches the cell", app.transition == 2);
 
 		// --- The pipe: project -> wire -> inflate -> render -> fire ---
 		var table = new nui.Snapshot.ActionTable();
