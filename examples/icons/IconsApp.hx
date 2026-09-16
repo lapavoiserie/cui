@@ -11,7 +11,15 @@ import cui.ui.VStack;
 	Every icon of the shared vocabulary as a character, a picture drawn with
 	whatever this terminal can do, and buttons with an icon.
 
-	    haxe build-icons.hxml && ./bin-icons/IconsApp
+	    haxe build-icons.hxml
+	    cd examples/icons && ../../bin-icons/IconsApp
+
+	**From this directory**, because that is where the `assets` are: an
+	`asset:` source is looked up beside the executable and beside where the
+	application was started, and cui has no build step to copy a directory
+	with. Run from anywhere else and the picture shows its `alt`, which is the
+	right answer to "there is no such file here" and a puzzling one to meet by
+	accident.
 
 	The picture is the same in kitty, in Windows Terminal and in a multiplexer:
 	`cui.term.Graphics` asks the terminal what it has -- the kitty protocol,
