@@ -545,11 +545,21 @@ class TestAll {
             "a character drawn as a picture asks for two cells, a plain one for one");
         var gear = new cui.ui.Icon("settings");
         assert(gear.measure(Unbounded).width == 2, "so the layout leaves it two");
+        var drawn = new Buffer(12, 1);
+        gear.render(drawn, new Rect(0, 0, 12, 1));
+        assert(drawn.get(0, 0).char == cui.nui.Icons.glyphOf("settings"), "the character going in the first of them");
+        assert(drawn.get(1, 0).continuation, "and the second belonging to it, which the renderer does not write");
+
+        // The other case, which no name in the table needs any more: the
+        // terminal advances one cell and paints over the next, so the cell
+        // after is a blank that IS written.
+        var own = new cui.ui.Icon("settings");
+        cui.nui.Icons.ROOM.set("settings", Inked);
         var inked = new Buffer(12, 1);
-        gear.render(inked, new Rect(0, 0, 12, 1));
-        assert(inked.get(0, 0).char == cui.nui.Icons.glyphOf("settings") && inked.get(1, 0).char == " ",
-            "and what follows it is a blank the picture is drawn over");
-        assert(!inked.get(1, 0).continuation, "which the renderer still writes: the cursor did advance over it");
+        own.render(inked, new Rect(0, 0, 12, 1));
+        assert(inked.get(1, 0).char == " " && !inked.get(1, 0).continuation,
+            "a character whose ink overruns is given a blank cell the renderer writes");
+        cui.nui.Icons.ROOM.set("settings", Wide);
 
         // A character the terminal advances two cells for: the second is not
         // a cell anybody may write.

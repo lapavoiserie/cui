@@ -43,11 +43,17 @@ class Icons {
 		- **The terminal advances two cells** -- a real emoji, and a CJK
 		  ideograph later. The cell after belongs to the character, and nothing
 		  may write there: `Wide`, which `Buffer.setWide` marks.
-		- **The terminal advances one cell and paints over the next** -- which is
-		  what Windows Terminal does with `settings`, `warning`, `mail` and
-		  `phone`, having an emoji face for them and preferring it. The cursor is
-		  where cui thinks it is, but the name beside the icon disappears under
-		  the picture: `Inked`, which reserves a blank cell after it.
+		- **The terminal advances one cell and paints over the next.** The cursor
+		  is where cui thinks it is, but the name beside the icon disappears
+		  under the picture: `Inked`, which reserves a blank cell after it.
+
+		  No name in this table is `Inked` any more, and the reason is worth
+		  keeping: `settings`, `warning`, `mail` and `phone` were, until each was
+		  written with U+FE0F after it. That selector asks for the coloured face,
+		  and with it Windows Terminal advances two cells like any emoji;
+		  without it, it paints one cell's character over two. So an application
+		  writing `⚙` in its own text, selector-less, falls into that case, and
+		  `Inked` is what its own table would say.
 
 		Elsewhere -- a terminal drawing these monochrome in one cell -- a
 		reserved cell is one space, which costs a panel nothing and is why this
@@ -58,10 +64,11 @@ class Icons {
 		picture, and the layout makes room for it.
 	**/
 	public static final ROOM:Map<String, Room> = [
-		// The terminal advances one cell and paints over the next: a blank is
-		// reserved after these.
-		"settings" => Inked, "warning" => Inked, "mail" => Inked, "phone" => Inked,
-		// The terminal advances two cells, and the ink stays inside them.
+		// The terminal advances two cells, and the ink stays inside them: every
+		// picture in this table, since the last four were measured with their
+		// selector. Nothing here is `Inked` any more -- see `Room` for what
+		// that case is still for.
+		"settings" => Wide, "warning" => Wide, "mail" => Wide, "phone" => Wide,
 		"add" => Wide, "close" => Wide, "check" => Wide, "edit" => Wide, "search" => Wide,
 		"home" => Wide, "info" => Wide, "error" => Wide, "refresh" => Wide, "share" => Wide,
 		"star" => Wide, "person" => Wide, "lock" => Wide, "unlock" => Wide, "save" => Wide,
@@ -89,11 +96,11 @@ class Icons {
 	public static final GLYPHS:Map<String, String> = [
 		// general
 		"add" => "➕", "close" => "❌", "check" => "✅", "delete" => "🗑️",
-		"edit" => "✏️", "search" => "🔍", "settings" => "⚙", "home" => "🏠",
-		"info" => "ℹ️", "warning" => "⚠", "error" => "⛔", "menu" => "≡",
+		"edit" => "✏️", "search" => "🔍", "settings" => "⚙️", "home" => "🏠",
+		"info" => "ℹ️", "warning" => "⚠️", "error" => "⛔", "menu" => "≡",
 		"more" => "…", "refresh" => "🔄", "share" => "📤", "star" => "⭐",
-		"person" => "👤", "lock" => "🔒", "unlock" => "🔓", "mail" => "✉",
-		"phone" => "☎", "save" => "💾",
+		"person" => "👤", "lock" => "🔒", "unlock" => "🔓", "mail" => "✉️",
+		"phone" => "☎️", "save" => "💾",
 		// direction
 		"back" => "‹", "forward" => "›", "up" => "˄", "down" => "˅",
 		// media
