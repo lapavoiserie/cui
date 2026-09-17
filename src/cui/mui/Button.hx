@@ -9,7 +9,8 @@ package cui.mui;
 	`#if (mui_backend == "cui")` branch it used to live in.
 **/
 class Button extends cui.ui.Button {
-    public function new(label:String, ?action:() -> Void) {
-        super(label, action != null ? action : function() {});
+    public function new(label:String, ?action:() -> Void, ?icon:mui.ui.IconName) {
+        super(label, action != null ? action : function() {},
+            icon == null ? null : (icon : String));
     }
 }
