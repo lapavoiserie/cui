@@ -113,7 +113,7 @@ class Describe {
 			if (t.family != null) out.prop("family", PString(t.family));
 			if (t.weight != null) out.prop("weight", PInt(t.weight));
 			if (t.slanted == true) out.prop("italic", PBool(true));
-			if (t.tabular) out.prop("numbers", PString(nui.TextStyle.TABULAR));
+			if (t.tabular) out.prop("numbers", PString(t.tabular));
 
 		} else if (Std.isOfType(view, cui.ui.Icon)) {
 			var i:cui.ui.Icon = cast view;

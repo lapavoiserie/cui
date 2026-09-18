@@ -56,7 +56,7 @@ class NodeRenderer {
 					props.exists("family") ? PropValueTools.asString(props.get("family")) : null,
 					props.exists("weight") ? PropValueTools.asInt(props.get("weight")) : null,
 					props.exists("italic") ? PropValueTools.asBool(props.get("italic")) : null,
-					nui.TextStyle.isTabular(props.exists("numbers") ? PropValueTools.asString(props.get("numbers")) : null));
+					props.exists("numbers") ? PropValueTools.asString(props.get("numbers")) : null);
 
 			case "VStack":
 				new cui.ui.VStack(kids, PropValueTools.asInt(props.get("spacing")));

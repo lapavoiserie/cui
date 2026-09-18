@@ -20,7 +20,7 @@ class Text extends View {
         size and one font, so the scale and the family are carried and not
         drawn -- which is the honest answer, not a lack.
     **/
-    public var scale(default, null):Null<String> = null;
+    public var scale(default, null):Null<nui.Scale> = null;
 
     public var family(default, null):Null<String> = null;
 
@@ -28,7 +28,7 @@ class Text extends View {
 
     public var slanted(default, null):Null<Bool> = null;
 
-    public var tabular(default, null):Bool = false;
+    public var tabular(default, null):nui.Numbers = false;
 
     public function new(content:String) {
         super();
@@ -36,8 +36,10 @@ class Text extends View {
     }
 
     /** Say how it is set; what a terminal can draw, it applies here. **/
-    public function styled(?scale:String, ?family:String, ?weight:Int, ?italic:Bool, tabular:Bool = false):Text {
-        if (scale != null) this.scale = nui.TextStyle.scaleOf(scale);
+    public function styled(?scale:nui.Scale, ?family:String, ?weight:Int, ?italic:Bool, ?tabular:nui.Numbers):Text {
+        // `nui.Scale` normalises on the way in, so what arrives is one of the
+        // four whether it came from an application or from a node.
+        if (scale != null) this.scale = scale;
         if (family != null && family != "") this.family = family;
         if (weight != null) this.weight = nui.TextStyle.weightOf(weight);
         if (italic != null) this.slanted = italic;
@@ -45,7 +47,7 @@ class Text extends View {
 
         // A heading is heavier because it cannot be larger; a weight said
         // outright is the same request, made in the vocabulary of fonts.
-        var heading = this.scale == "title" || this.scale == "subtitle";
+        var heading = this.scale == Title || this.scale == Subtitle;
         if (heading || (this.weight != null && nui.TextStyle.isBold(this.weight))) bold();
         if (this.slanted == true) super.italic();
         return this;
