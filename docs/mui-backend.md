@@ -108,6 +108,60 @@ declaration portable without keeping it quiet.
 Checked by `tests/mui-commands.sh`, which drives `handleEvent` with
 synthesized keys under the interpreter.
 
+## The vocabulary, and the markup it makes possible
+
+`cui` declares what its controls are, on the controls:
+
+```haxe
+@:node("Toggle")
+class Checkbox extends View {
+	@:prop var label:String;
+	@:prop("isOn", "onToggle") var binding:CheckboxBinding;
+}
+```
+
+`nui.macros.Declarations` reads that at compile time — shared by every backend,
+so `cui` says only where its controls live and what a view is here
+(`cui.nui.Vocabulary.DIALECT`). Everything else comes out of it:
+`cui.nui.Describe` and `cui.nui.NodeRenderer` are both **generated** from those
+declarations by `cui.nui.Derive`, and `mui`'s markup is checked against them:
+
+```
+--macro cui.nui.Vocabulary.registerWithMui()
+```
+
+```haxe
+ui(<VStack spacing={1}>
+	<Text text="Régie"/>
+	<Toggle label="Muet" isOn={muet} onToggle={v -> moteur.muet(v)}/>
+</VStack>);
+```
+
+A misspelt attribute names itself and lists what is accepted; a tag nothing
+declares is refused. `tests/markup/check.sh` checks both.
+
+### Why it is worth the trouble
+
+The two directions were twenty-four cases facing twenty-two, written by hand,
+for the same controls. They had already drifted in two ways:
+
+- **`cui.ui.Password` crossed as a `TextInput`**, with the password in `text`.
+  It extends `cui.ui.Input`, and the describer chose its branch with
+  `Std.isOfType` in written order — so a receiver with no way to know drew it in
+  clear. A flag fails open; a type fails closed, and the type is now what the
+  declaration says rather than what the branch order does.
+- **`Divider`, `ProgressView`, `ScrollView` and `ZStack`** were emitted by the
+  describer and had no case in the renderer at all: a tree `cui` described,
+  `cui` could not draw back.
+
+Describing dispatches by class now, walking up to the nearest declared ancestor,
+so nothing is ordered. `cui.mui.SafeArea` still lands on `VStack` — on `cui` it
+IS a padded stack — reached without an ordered list.
+
+`Tabs`, `ListView` and `cui.mui.ZStack` stay hand-written and say why where they
+are: the first two flatten, and the third extends `VStack`, so it is asked
+before the declarations.
+
 ## See also
 
 - [Adding a backend](https://lapavoiserie.github.io/mui/#/adding-a-backend) — the
