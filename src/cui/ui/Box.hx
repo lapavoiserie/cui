@@ -6,6 +6,8 @@ import cui.layout.Rect;
 import cui.layout.Size;
 import cui.render.Buffer;
 
+@:node("Box")
+@:content("child")
 class Box extends View {
     public var child(default, null):View;
 

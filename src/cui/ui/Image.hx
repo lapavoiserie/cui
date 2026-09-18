@@ -20,14 +20,15 @@ import cui.render.Buffer;
 	(asked of the terminal, or a common one's). With neither, the picture takes
 	the room its own pixels ask for, within reason.
 **/
+@:node("Image")
 class Image extends View {
-	public var src(default, null):String;
-	public var alt(default, null):String;
+	@:prop public var src(default, null):String;
+	@:prop public var alt(default, null):String;
 	/** The size a graphical backend would draw it at; a terminal keeps it for
 		the day it can (`width` and `height` are taken on cui's own View). **/
-	public var drawWidth(default, null):Null<Float>;
-	public var drawHeight(default, null):Null<Float>;
-	public var fit(default, null):String;
+	@:prop("width") public var drawWidth(default, default):Null<Float>;
+	@:prop("height") public var drawHeight(default, default):Null<Float>;
+	@:prop public var fit(default, default):String;
 
 	public function new(src:String, ?alt:String, ?options:{?width:Float, ?height:Float, ?fit:String}) {
 		super();

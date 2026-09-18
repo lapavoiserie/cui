@@ -8,8 +8,9 @@ import cui.modifiers.ViewModifier;
 import cui.render.Buffer;
 import cui.render.Style;
 
+@:node("Text")
 class Text extends View {
-    public var content:String;
+    @:prop("text") public var content:String;
 
     /**
         How the canon says this text is set (`nui.TextStyle`).
@@ -20,19 +21,47 @@ class Text extends View {
         size and one font, so the scale and the family are carried and not
         drawn -- which is the honest answer, not a lack.
     **/
-    public var scale(default, null):Null<nui.Scale> = null;
+    @:prop public var scale(default, set):Null<nui.Scale> = null;
 
-    public var family(default, null):Null<String> = null;
+    @:prop public var family(default, set):Null<String> = null;
 
-    public var weight(default, null):Null<Int> = null;
+    @:prop public var weight(default, set):Null<Int> = null;
 
-    public var slanted(default, null):Null<Bool> = null;
+    @:prop("italic") public var slanted(default, set):Null<Bool> = null;
 
-    public var tabular(default, null):nui.Numbers = false;
+    @:prop("numbers") public var tabular(default, set):nui.Numbers = false;
 
     public function new(content:String) {
         super();
         this.content = content;
+    }
+
+    function set_scale(v:Null<nui.Scale>):Null<nui.Scale> { scale = v; return applied(); }
+
+    function set_family(v:Null<String>):Null<String> { family = v; return applied(); }
+
+    function set_weight(v:Null<Int>):Null<Int> { weight = v; return applied(); }
+
+    function set_slanted(v:Null<Bool>):Null<Bool> { slanted = v; return applied(); }
+
+    function set_tabular(v:nui.Numbers):nui.Numbers { tabular = v; return applied(); }
+
+    /**
+        What the style says, applied, whoever wrote it.
+
+        This used to live at the end of `styled()`, so a heading set through
+        that method was bold and a heading set by assigning `scale` was not.
+        Nobody assigned `scale` until the generated builder did -- it fills a
+        control's non-argument properties by assignment, which is what the
+        declarations say they are -- and a received subtitle came out in plain
+        text. Derived where it is read from rather than where one caller
+        happened to put it.
+    **/
+    function applied<T>(?ignored:T):T {
+        var heading = this.scale == Title || this.scale == Subtitle;
+        if (heading || (this.weight != null && nui.TextStyle.isBold(this.weight))) bold();
+        if (this.slanted == true) super.italic();
+        return ignored;
     }
 
     /** Say how it is set; what a terminal can draw, it applies here. **/
@@ -46,10 +75,8 @@ class Text extends View {
         if (tabular) this.tabular = true;
 
         // A heading is heavier because it cannot be larger; a weight said
-        // outright is the same request, made in the vocabulary of fonts.
-        var heading = this.scale == Title || this.scale == Subtitle;
-        if (heading || (this.weight != null && nui.TextStyle.isBold(this.weight))) bold();
-        if (this.slanted == true) super.italic();
+        // outright is the same request, made in the vocabulary of fonts. Done
+        // by the setters above now, so an assignment gets it too.
         return this;
     }
 

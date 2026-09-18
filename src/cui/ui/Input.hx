@@ -10,9 +10,10 @@ import cui.render.Buffer;
 import cui.render.Style;
 import cui.state.Binding;
 
+@:node("TextInput")
 class Input extends View {
-    var binding:Binding<String>;
-    var placeholder:String;
+    @:prop("text", "onText") var binding:Binding<String>;
+    @:prop var placeholder:String;
 
     /**
         Where the caret is, and whose it is -- kept across the rebuild that
@@ -79,7 +80,7 @@ class Input extends View {
 
         Null for a field with no such act, and then Enter is not this view's key.
     **/
-    public var onSubmit:Null<Void->Void> = null;
+    @:action("onSubmit") public var onSubmit:Null<Void->Void> = null;
 
     public function new(binding:Binding<String>, placeholder:String = "") {
         super();

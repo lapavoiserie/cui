@@ -940,6 +940,76 @@ class TestAll {
         The difference from a secret is purpose. Here the application binds the
         value, pre-fills it and reads it back; the field simply never shows it.
     **/
+    /**
+        What the controls declare, and what both directions do with it.
+
+        Both were hand-written and facing each other -- twenty-four cases
+        against twenty-two -- and they had already drifted in two ways this
+        section now pins.
+    **/
+    static function testVocabulary():Void {
+        section("Vocabulary");
+
+        assert(CuiProbe.verify() == 14, "every declared control is read, and none refused");
+
+        // THE ONE THAT MATTERED. `cui.ui.Password` extends `cui.ui.Input`, and
+        // `Describe` chose its branch with `Std.isOfType` in written order --
+        // so a password fell into the `TextInput` branch and crossed as an
+        // ORDINARY field. The far side has no way to know, and draws it in
+        // clear. A flag fails open; a type fails closed, and the type is now
+        // what the declaration says rather than what the branch order does.
+        var secret = new cui.state.State<String>("hunter2", "pw");
+        var field = new cui.ui.Password(cui.state.Binding.from(secret), "Mot de passe");
+        var sent = cui.nui.Describe.describe(field);
+        assert(sent.type == "PasswordInput", "a password crosses as a password, not as a field");
+        var back = NodeRenderer.build(sent);
+        assert(Std.isOfType(back, cui.ui.Password), "and is rebuilt as one");
+        assert(cui.nui.Describe.describe(new cui.ui.Input(cui.state.Binding.from(secret), "")).type == "TextInput",
+            "while an ordinary field is still an ordinary field");
+
+        // Four types `Describe` emitted had no case in `NodeRenderer` at all:
+        // a tree cui described, cui could not draw back.
+        var undrawn = [];
+        for (entry in CuiProbe.all().split(";")) {
+            var type = entry.split("|")[0];
+            var drawn = NodeRenderer.build(new nui.Node(type));
+            if (Std.isOfType(drawn, cui.ui.Text)
+                && StringTools.startsWith((cast drawn : cui.ui.Text).content, "?"))
+                undrawn.push(type);
+        }
+        assert(undrawn.join(",") == "", "every declared type is one the renderer draws: " + undrawn.join(","));
+
+        // Out and back, for every declared type. Compared to ITSELF rather
+        // than to what was sent, because some values are normalised on the way
+        // in and should be -- what must hold is that a tree already through
+        // the round trip does not keep changing.
+        var lost = [];
+        for (entry in CuiProbe.all().split(";")) {
+            var type = entry.split("|")[0];
+            var node = new nui.Node(type);
+            for (declared in entry.split("|")[1].split(",")) {
+                if (declared == "") continue;
+                var parts = declared.split(":");
+                node.prop(parts[0], switch (parts[1]) {
+                    case "Bool": PBool(true);
+                    case "Int": PInt(3);
+                    case "Float": PFloat(0.5);
+                    case _: PString("x-" + parts[0]);
+                });
+            }
+            var once = cui.nui.Describe.describe(NodeRenderer.build(node));
+            if (once.type != type) { lost.push(type + " -> " + once.type); continue; }
+            var twice = cui.nui.Describe.describe(NodeRenderer.build(once));
+            for (name in once.props.keys()) {
+                var before = Std.string(once.props.get(name));
+                if (StringTools.startsWith(before, "PCallback")) continue;
+                if (before != Std.string(twice.props.get(name)))
+                    lost.push(type + "." + name + ": " + before + " -> " + Std.string(twice.props.get(name)));
+            }
+        }
+        assert(lost.join(" | ") == "", "every declared property survives node -> view -> node: " + lost.join(" | "));
+    }
+
     static function testPassword():Void {
         section("Password");
 
@@ -998,6 +1068,7 @@ class TestAll {
         testEditing();
         testReceivedControls();
         testPassword();
+        testVocabulary();
 
         Sys.println('\n$passed passed, $failed failed');
         if (failed > 0) Sys.exit(1);

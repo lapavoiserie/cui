@@ -12,9 +12,10 @@ import cui.render.Buffer;
 	A name this terminal has no character for -- a tree from a newer sender --
 	is its label, as text, which is the same answer every other backend gives.
 **/
+@:node("Icon")
 class Icon extends View {
-	public var name(default, null):String;
-	public var label(default, null):Null<String>;
+	@:prop public var name(default, null):String;
+	@:prop public var label(default, null):Null<String>;
 
 	public function new(name:String, ?label:String) {
 		super();

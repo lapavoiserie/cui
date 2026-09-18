@@ -18,10 +18,11 @@ import cui.state.State;
 
     Left/Right arrow keys adjust the value by `step`.
 **/
+@:node("Slider")
 class Slider extends View {
-    var binding:SliderBinding;
-    var min:Float;
-    var max:Float;
+    @:prop("value", "onValue") var binding:SliderBinding;
+    @:prop var min:Float;
+    @:prop var max:Float;
     var step:Float;
 
     public function new(binding:SliderBinding, min:Float = 0.0, max:Float = 1.0, step:Float = 0.05) {

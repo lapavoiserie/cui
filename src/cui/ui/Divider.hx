@@ -6,6 +6,7 @@ import cui.layout.Rect;
 import cui.layout.Size;
 import cui.render.Buffer;
 
+@:node("Divider")
 class Divider extends View {
     var horizontal:Bool;
     var char:String;

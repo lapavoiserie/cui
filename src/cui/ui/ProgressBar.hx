@@ -8,9 +8,10 @@ import cui.render.Buffer;
 import cui.render.Style;
 import cui.render.Color;
 
+@:node("ProgressView")
 class ProgressBar extends View {
-    var value:Float; // 0.0 to 1.0
-    var label:String;
+    @:prop var value:Float; // 0.0 to 1.0
+    @:prop var label:String;
 
     public function new(value:Float, label:String = "") {
         super();

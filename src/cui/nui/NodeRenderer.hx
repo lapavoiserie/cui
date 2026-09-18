@@ -45,105 +45,24 @@ class NodeRenderer {
 	}
 
 	static function create(node:Node, kids:Array<View>):View {
-		var props = node.props;
-		return switch (node.type) {
-			case "Text":
-				// Set as it was sent: the scale, and what a terminal can do
-				// with the rest. Nothing of this crossed before the canon said
-				// how -- a received heading was ordinary text.
-				new cui.ui.Text(PropValueTools.asString(props.get("text"))).styled(
-					props.exists("scale") ? PropValueTools.asString(props.get("scale")) : null,
-					props.exists("family") ? PropValueTools.asString(props.get("family")) : null,
-					props.exists("weight") ? PropValueTools.asInt(props.get("weight")) : null,
-					props.exists("italic") ? PropValueTools.asBool(props.get("italic")) : null,
-					props.exists("numbers") ? PropValueTools.asString(props.get("numbers")) : null);
-
-			case "VStack":
-				new cui.ui.VStack(kids, PropValueTools.asInt(props.get("spacing")));
-
-			case "HStack":
-				new cui.ui.HStack(kids, PropValueTools.asInt(props.get("spacing")));
-
-			case "Button":
-				new cui.ui.Button(PropValueTools.asString(props.get("label")), action(props.get("onClick")),
-					props.exists("icon") ? PropValueTools.asString(props.get("icon")) : null);
-
-			case "Icon":
-				new cui.ui.Icon(PropValueTools.asString(props.get("name")),
-					props.exists("label") ? PropValueTools.asString(props.get("label")) : null);
-
-			case "Image":
-				new cui.ui.Image(PropValueTools.asString(props.get("src")), PropValueTools.asString(props.get("alt")), {
-					width: props.exists("width") ? PropValueTools.asFloat(props.get("width")) : null,
-					height: props.exists("height") ? PropValueTools.asFloat(props.get("height")) : null,
-					fit: props.exists("fit") ? PropValueTools.asString(props.get("fit")) : null
-				});
-
-			// The three editable controls a tree can carry. They were missing:
-			// cui DESCRIBED a Toggle, a Slider and a TextInput outward and drew
-			// none of them inward, so a received panel showed "?Toggle" where a
-			// switch should be -- and cui hosts Companion, so that was a real
-			// panel and not a hypothesis.
-			case "Toggle":
-				var on = PropValueTools.asBool(props.get("isOn"));
-				var tell = flag(props.get("onToggle"));
-				new cui.ui.Checkbox(PropValueTools.asString(props.get("label")),
-					new cui.ui.Checkbox.CheckboxBinding(() -> on, v -> tell(v)));
-
-			case "Slider":
-				var at = PropValueTools.asFloat(props.get("value"));
-				var tell = number(props.get("onValue"));
-				var low = props.exists("min") ? PropValueTools.asFloat(props.get("min")) : 0.0;
-				var high = props.exists("max") ? PropValueTools.asFloat(props.get("max")) : 1.0;
-				new cui.ui.Slider(new cui.ui.Slider.SliderBinding(() -> at, v -> tell(v)),
-					low, high);
-
-			case "TextInput":
-				var was = PropValueTools.asString(props.get("text"));
-				var tell = words(props.get("onText"));
-				var field = new cui.ui.Input(
-					new cui.state.Binding(() -> was, v -> tell(v)),
-					PropValueTools.asString(props.get("placeholder")));
-				// The value is the sender's and arrives a keystroke behind, so
-				// the field keeps what was typed until it loses focus. nui's
-				// canon states the rule; `pui` paid for not having it.
-				field.receivesValue = true;
-				// A field carrying `onSubmit` and no `onText` reports nothing
-				// until Enter: the canon's shape for a value whose effect is an
-				// act rather than a running total.
-				if (props.exists("onSubmit")) field.onSubmit = action(props.get("onSubmit"));
-				field;
-
-			case "Picker":
-				// The options are the `Text` children, which is what the canon
-				// says they are -- read here rather than from a prop, since a
-				// list does not fit in a `PropValue`.
-				var options = [
-					for (child in node.resolveChildren())
-						PropValueTools.asString(child.props.get("text"))
-				];
-				// The index shown is the sender's, and a choice is reported
-				// rather than applied: what this terminal shows next is
-				// whatever the sender says next. That is the rule for a tree
-				// that arrives as data, and the reason this binding keeps no
-				// copy of its own.
-				var chosen = props.get("selectedIndex");
-				var report = select(props.get("onSelect"));
-				new cui.ui.Picker(PropValueTools.asString(props.get("label")), options,
-					new cui.ui.Picker.PickerBinding(
-						() -> chosen == null ? -1 : PropValueTools.asInt(chosen),
-						at -> report(at)));
-
-			case "Spacer":
-				new cui.ui.Spacer();
-
-			case "Box":
-				new cui.ui.Box(kids.length > 0 ? kids[0] : null);
-
-			case unknown:
-				// Loud rather than invisible: an unmapped type is a bug to see.
-				new cui.ui.Text("?" + unknown);
+		// Everything a control declares about itself, in the one direction and
+		// the other, is generated from those declarations -- see cui.nui.Derive.
+		// This used to be twenty-four cases facing twenty-two in `Describe`, and
+		// the two had already drifted: a `Password` described as an ordinary
+		// `TextInput`, and four types `Describe` emits had no case here at all.
+		var declared = Derived.BUILDERS.get(node.type);
+		if (declared != null) {
+			var made = declared(node, kids);
+			// The one rule about a RECEIVED tree that no declaration could
+			// state: the value is somebody else's, and a node lags a keystroke
+			// or two behind while somebody types. Not a dispatch -- one
+			// question, asked of whatever came back.
+			if (Std.isOfType(made, cui.ui.Input))
+				(cast made : cui.ui.Input).receivesValue = true;
+			return made;
 		}
+		// Loud rather than invisible: an unmapped type is a bug to see.
+		return new cui.ui.Text("?" + node.type);
 	}
 
 	/**
@@ -157,7 +76,30 @@ class NodeRenderer {
 		typed shapes fire with their zero value for the same reason; anything
 		else stays a no-op.
 	**/
-	static function action(v:Null<PropValue>):Void->Void {
+	/**
+		An act carrying a position, whatever shape the wire left it in.
+
+		The same tolerance as the others: a tree that crossed a wire carries
+		every action as `PCallbackString`, the shapes living in the far table
+		and not on the props.
+	**/
+	public static function index(v:Null<PropValue>):Int->Void {
+		var r = PropValueTools.resolve(v);
+		if (r == null) return function(_) {};
+		return switch (r) {
+			case PCallbackInt(fn): fn;
+			case PCallbackFloat(fn): function(i:Int) fn(i);
+			case PCallbackString(fn): function(i:Int) fn(Std.string(i));
+			case PCallback(fn): function(_) fn();
+			case _: function(_) {};
+		}
+	}
+
+	/** An act carrying an amount. `number` under the name the generator uses. **/
+	public static function amount(v:Null<PropValue>):Float->Void
+		return number(v);
+
+	public static function action(v:Null<PropValue>):Void->Void {
 		var r = PropValueTools.resolve(v);
 		if (r == null) return function() {};
 		return switch (r) {
@@ -188,7 +130,7 @@ class NodeRenderer {
 		a level or a flag cast into that slot reaches `Std.parseFloat` and
 		answers NaN, which is how `pui` lost every received slider for a while.
 	**/
-	static function flag(v:Null<PropValue>):Bool->Void {
+	public static function flag(v:Null<PropValue>):Bool->Void {
 		var r = PropValueTools.resolve(v);
 		if (r == null) return function(_) {};
 		return switch (r) {
@@ -202,7 +144,7 @@ class NodeRenderer {
 	}
 
 	/** A callback that carries a level. **/
-	static function number(v:Null<PropValue>):Float->Void {
+	public static function number(v:Null<PropValue>):Float->Void {
 		var r = PropValueTools.resolve(v);
 		if (r == null) return function(_) {};
 		return switch (r) {
@@ -215,7 +157,7 @@ class NodeRenderer {
 	}
 
 	/** A callback that carries the whole text, never the key. **/
-	static function words(v:Null<PropValue>):String->Void {
+	public static function words(v:Null<PropValue>):String->Void {
 		var r = PropValueTools.resolve(v);
 		if (r == null) return function(_) {};
 		return switch (r) {

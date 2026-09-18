@@ -60,16 +60,19 @@ class PickerBinding {
     }
 }
 
+@:node("Picker")
 class Picker extends View {
     /** The arrows either side of the value: there is more to the left, to the right. **/
     static inline var LEFT = "‹";
 
     static inline var RIGHT = "›";
 
-    public var label:String;
-    public var options:Array<String>;
+    @:prop public var label:String;
 
-    var binding:PickerBinding;
+    /** One `Text` child per option, as the canon says. **/
+    @:children("Text", "text") public var options:Array<String>;
+
+    @:prop("selectedIndex", "onSelect") var binding:PickerBinding;
 
     public function new(label:String, options:Array<String>, binding:PickerBinding) {
         super();

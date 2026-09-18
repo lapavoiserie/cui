@@ -9,16 +9,18 @@ import cui.layout.Size;
 import cui.render.Buffer;
 import cui.render.Style;
 
+@:node("Button")
 class Button extends View {
-    public var label(default, null):String;
+    @:prop public var label(default, null):String;
 
     /**
         A name from the shared vocabulary (`nui.Icons`), drawn as its character
         before the label -- or alone, when the label is empty.
     **/
-    public var icon(default, null):Null<String>;
+    @:prop public var icon(default, null):Null<String>;
 
-    var action:Void->Void;
+    /** The act itself: it crosses as a key, never as this closure. **/
+    @:action("onClick") var action:Void->Void;
 
     public function new(label:String, action:Void->Void, ?icon:String) {
         super();

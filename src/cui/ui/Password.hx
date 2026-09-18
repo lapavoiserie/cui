@@ -13,6 +13,12 @@ import cui.state.Binding;
 	The value is the application's: bound, pre-filled, read back. That is the
 	difference from a secret, which no application holds at all.
 **/
+// Borrowed by name, not inherited: metadata does not cross an `extends` in
+// nui.macros.Declarations, and this is the class that shows why it must not.
+@:node("PasswordInput")
+@:prop("binding", "text", "onText")
+@:prop("placeholder")
+@:action("onSubmit", "onSubmit")
 class Password extends Input {
 	public function new(binding:Binding<String>, placeholder:String = "") {
 		super(binding, placeholder);

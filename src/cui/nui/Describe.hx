@@ -101,84 +101,40 @@ class Describe {
 	static function isForEach(view:View):Bool
 		return Std.isOfType(view, cui.ui.ForEach);
 
+	/**
+		The describer for a view's class, or its nearest declared ancestor's.
+
+		A walk up the chain rather than a chain of `Std.isOfType`, which is the
+		whole point: `isOfType` answers by the ORDER the branches were written,
+		and here that had already cost something -- `cui.ui.Password` extends
+		`cui.ui.Input`, so it fell into the `TextInput` branch and a password
+		crossed as an ordinary field, for a receiver to draw in clear.
+
+		`cui.mui.SafeArea` still lands on `VStack`, because on `cui` it IS a
+		padded stack and `VStack` is its nearest declared ancestor. Same answer
+		as before, reached without an ordered list.
+	**/
+	static function declaredFor(view:View):Null<View->Node> {
+		var cls = Type.getClass(view);
+		while (cls != null) {
+			var found = Derived.DESCRIBERS.get(Type.getClassName(cls));
+			if (found != null) return found;
+			cls = cast Type.getSuperClass(cls);
+		}
+		return null;
+	}
+
 	static function node(view:View):Node {
 		var out:Node;
 
-		// Most-derived first: ZStack and SafeArea extend VStack, the mui
-		// facades extend the widgets. Order is the correctness here.
-		if (Std.isOfType(view, cui.ui.Text)) {
-			var t:cui.ui.Text = cast view;
-			out = new Node("Text").prop("text", PString(t.content));
-			if (t.scale != null) out.prop("scale", PString(t.scale));
-			if (t.family != null) out.prop("family", PString(t.family));
-			if (t.weight != null) out.prop("weight", PInt(t.weight));
-			if (t.slanted == true) out.prop("italic", PBool(true));
-			if (t.tabular) out.prop("numbers", PString(t.tabular));
-
-		} else if (Std.isOfType(view, cui.ui.Icon)) {
-			var i:cui.ui.Icon = cast view;
-			out = new Node("Icon").prop("name", PString(i.name));
-			if (i.label != null && i.label != "") out.prop("label", PString(i.label));
-
-		} else if (Std.isOfType(view, cui.ui.Image)) {
-			var p:cui.ui.Image = cast view;
-			out = new Node("Image").prop("src", PString(p.src)).prop("alt", PString(p.alt));
-			if (p.drawWidth != null) out.prop("width", PFloat(p.drawWidth));
-			if (p.drawHeight != null) out.prop("height", PFloat(p.drawHeight));
-			if (p.fit != "contain") out.prop("fit", PString(p.fit));
-
-		} else if (Std.isOfType(view, cui.ui.Button)) {
-			var b:cui.ui.Button = cast view;
-			out = new Node("Button")
-				.prop("label", PString(b.label))
-				.prop("onClick", PCallback(b.action));
-			if (b.icon != null) out.prop("icon", PString(b.icon));
-
-		} else if (Std.isOfType(view, cui.ui.Checkbox)) {
-			var c:cui.ui.Checkbox = cast view;
-			var binding = c.binding;
-			out = new Node("Toggle")
-				.prop("label", PString(c.label))
-				.prop("isOn", PBool(binding.get()))
-				.prop("onToggle", PCallbackBool(v -> binding.set(v)));
-
-		} else if (Std.isOfType(view, cui.ui.Slider)) {
-			var s:cui.ui.Slider = cast view;
-			var binding = s.binding;
-			out = new Node("Slider")
-				.prop("value", PFloat(binding.get()))
-				.prop("min", PFloat(s.min))
-				.prop("max", PFloat(s.max))
-				.prop("onValue", PCallbackFloat(v -> binding.set(v)));
-
-		} else if (Std.isOfType(view, cui.ui.Picker)) {
-			var p:cui.ui.Picker = cast view;
-			var binding = p.binding;
-			// One `Text` child per option, which is what nui's canon says a
-			// picker's options are. That this terminal cycles through them
-			// rather than dropping down is how it draws, and stops here.
-			out = new Node("Picker")
-				.prop("label", PString(p.label))
-				.prop("selectedIndex", PInt(p.index()))
-				.prop("onSelect", PCallbackInt(at -> binding.set(at)));
-			for (option in p.options)
-				out.child(new Node("Text").prop("text", PString(option)));
-
-		} else if (Std.isOfType(view, cui.ui.Input)) {
-			var i:cui.ui.Input = cast view;
-			var binding = i.binding;
-			out = new Node("TextInput")
-				.prop("text", PString(binding.get()))
-				.prop("placeholder", PString(i.placeholder))
-				.prop("onText", PCallbackString(v -> binding.set(v)));
-
-		} else if (Std.isOfType(view, cui.ui.ProgressBar)) {
-			var p:cui.ui.ProgressBar = cast view;
-			out = new Node("ProgressView")
-				.prop("value", PFloat(p.value))
-				.prop("label", PString(p.label));
-
-		} else if (Std.isOfType(view, cui.ui.Tabs)) {
+		// Three views cross as something other than themselves, each for a
+		// reason a declaration could not carry; everything else is generated
+		// from what the controls declare -- see cui.nui.Derive.
+		//
+		// These are asked BEFORE the declarations, and that is the one place
+		// order still matters here. Three named exceptions rather than
+		// twenty-two ordered branches, and each says why.
+		if (Std.isOfType(view, cui.ui.Tabs)) {
 			// A snapshot is one picture: the active tab's content, flattened.
 			// Carrying every page would describe views the terminal is not
 			// showing, and the receiving side has no tab chrome to offer.
@@ -203,42 +159,30 @@ class Describe {
 		} else if (Std.isOfType(view, cui.mui.ZStack)) {
 			out = withChildren(new Node("ZStack"), view);
 
-		} else if (Std.isOfType(view, cui.ui.ScrollView)) {
-			out = withChildren(new Node("ScrollView"), view);
-
-		} else if (Std.isOfType(view, cui.ui.Spacer)) {
-			out = new Node("Spacer");
-
-		} else if (Std.isOfType(view, cui.ui.Divider)) {
-			out = new Node("Divider");
-
-		} else if (Std.isOfType(view, cui.ui.Box)) {
-			var b:cui.ui.Box = cast view;
-			out = new Node("Box");
-			if (b.child != null) out.child(node(b.child));
-
-		} else if (Std.isOfType(view, cui.ui.HStack)) {
-			var h:cui.ui.HStack = cast view;
-			out = withChildren(new Node("HStack").prop("spacing", PInt(h.spacing)), view);
-
-		} else if (Std.isOfType(view, cui.ui.VStack)) {
-			// SafeArea lands here on purpose: on cui it IS a padded stack
-			// (its padding rides as a modifier below), so "VStack" is the
-			// honest wire name rather than a role the receiver cannot honor.
-			var v:cui.ui.VStack = cast view;
-			out = withChildren(new Node("VStack").prop("spacing", PInt(v.spacing)), view);
-
 		} else {
-			// Loud rather than invisible, the NodeRenderer rule in reverse:
-			// the receiving side will draw "?Name" and the name says whose.
-			var full = Type.getClassName(Type.getClass(view));
-			var short = full.substr(full.lastIndexOf(".") + 1);
-			out = withChildren(new Node(short), view);
+			var declared = declaredFor(view);
+			if (declared != null) {
+				out = declared(view);
+			} else {
+				// Loud rather than invisible, the NodeRenderer rule in reverse:
+				// the receiving side will draw "?Name" and the name says whose.
+				var full = Type.getClassName(Type.getClass(view));
+				var short = full.substr(full.lastIndexOf(".") + 1);
+				out = withChildren(new Node(short), view);
+			}
 		}
 
 		describeModifiers(view, out);
 		return out;
 	}
+
+	/**
+		Splice a view's children into its node. Called by the generated
+		describers, which know a container's children go here and nothing else
+		about them.
+	**/
+	public static function appendChildren(view:View, out:Node):Node
+		return withChildren(out, view);
 
 	static function withChildren(out:Node, view:View):Node {
 		if (view.children != null) {

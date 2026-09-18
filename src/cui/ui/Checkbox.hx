@@ -39,9 +39,10 @@ class CheckboxBinding {
     }
 }
 
+@:node("Toggle")
 class Checkbox extends View {
-    var label:String;
-    var binding:CheckboxBinding;
+    @:prop var label:String;
+    @:prop("isOn", "onToggle") var binding:CheckboxBinding;
 
     public function new(label:String, binding:CheckboxBinding) {
         super();
