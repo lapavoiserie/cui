@@ -934,6 +934,43 @@ class TestAll {
         View.focusManager = null;
     }
 
+    /**
+        A password field: masked, and the value is the application's.
+
+        The difference from a secret is purpose. Here the application binds the
+        value, pre-fills it and reads it back; the field simply never shows it.
+    **/
+    static function testPassword():Void {
+        section("Password");
+
+        var value = new cui.state.State<String>("hunter2", "pw");
+        var field = new cui.ui.Password(cui.state.Binding.from(value), "Password");
+        var page = new VStack([field], 0);
+        View.focusManager = new cui.focus.FocusManager();
+        View.focusManager.buildFocusRing(page);
+
+        var buf = new Buffer(30, 1);
+        field.render(buf, new Rect(0, 0, 30, 1));
+        var drawn = row(buf, 1);
+        assert(drawn.indexOf("hunter2") < 0, "the value is never drawn");
+        assert(drawn.indexOf("\u2022\u2022\u2022\u2022\u2022\u2022\u2022") == 0,
+            "seven characters are seven marks (\"" + drawn + "\")");
+
+        // The application has it, which is the whole point.
+        assert(value.get() == "hunter2", "and the bound value is untouched");
+        field.handleEvent(Key(new cui.event.KeyEvent.KeyEvent(Char("!"))));
+        assert(value.get() == "hunter2!", "typing reaches the binding, as in any field");
+
+        // An ordinary field is not masked by this.
+        var plain = new cui.ui.Input(cui.state.Binding.from(value), "Name");
+        var plainBuf = new Buffer(30, 1);
+        plain.render(plainBuf, new Rect(0, 0, 30, 1));
+        assert(row(plainBuf, 1).indexOf("hunter2!") == 0,
+            "an ordinary Input still shows its text");
+
+        View.focusManager = null;
+    }
+
     static function main():Void {
         Sys.println("CUI Test Suite\n");
 
@@ -960,6 +997,7 @@ class TestAll {
         testPicker();
         testEditing();
         testReceivedControls();
+        testPassword();
 
         Sys.println('\n$passed passed, $failed failed');
         if (failed > 0) Sys.exit(1);

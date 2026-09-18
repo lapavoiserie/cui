@@ -93,6 +93,27 @@ class Input extends View {
         return View.focusManager == null ? -1 : View.focusManager.focusIndex;
     }
 
+    /**
+        Whether the value is drawn as marks rather than as itself.
+
+        A password field is a field in every respect but this one, so it is one
+        flag here rather than a second class -- `cui.ui.Password` sets it, and
+        nui's canon states `PasswordInput` as its own TYPE for the reason a
+        flag on the wire would fail open. The distinction is between a wire,
+        where a renderer may not know the flag, and a class in this library,
+        where it cannot be missed.
+    **/
+    public var masked:Bool = false;
+
+    /** What is DRAWN: the text, or one mark per character of it. **/
+    function displayText():String {
+        var body = text();
+        if (!masked) return body;
+        var out = new StringBuf();
+        for (_ in 0...body.length) out.add("\u2022");
+        return out.toString();
+    }
+
     /** What the field shows: the binding, or the draft while it is being typed in. **/
     function text():String {
         if (receivesValue && isFocused() && draft != null && draftOwner == slot()) return draft;
@@ -162,7 +183,7 @@ class Input extends View {
         }
 
         var inner = area.inner(insets);
-        var text = this.text();
+        var text = displayText();
         var focused = isFocused();
         var cursorPos = cursor();
 
