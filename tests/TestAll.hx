@@ -196,6 +196,55 @@ class TestAll {
         assert(buf.get(19, 0).char == "R", "Right at x=19");
     }
 
+    /**
+        The canon's `clip`: children cut at this view's edge.
+
+        `cui.nui.NodeRenderer` used to drop it, saying "no terminal
+        equivalent -- skipped on purpose". There is one, and `ScrollView` has
+        used it since before there was a canon: render into a buffer of your
+        own and copy back only the window you own.
+
+        Without it a child writes straight into the shared screen buffer, which
+        clips to the TERMINAL and not to a view, so a row too narrow for its
+        labels drew over whatever stood beside it.
+    **/
+    static function testClip():Void {
+        section("Clip");
+
+        // A child that genuinely overdraws. cui's own views do not -- a `Text`
+        // wraps to the width it is given -- so using one would have proved
+        // something about `Text` and nothing about clipping, and would have
+        // passed either way.
+        function draw(clipped:Bool):Buffer {
+            var box = new HStack([new Overdrawer()], 0);
+            if (clipped) box.modifiers.push(cui.modifiers.ViewModifier.Clip);
+            var buf = new Buffer(12, 1);
+            for (x in 0...12) buf.set(x, 0, ".", new cui.render.Style());
+            box.renderInto(buf, new Rect(0, 0, 4, 1));
+            return buf;
+        }
+
+        var loose = draw(false);
+        assert(loose.get(5, 0).char == "F",
+            "a child that overdraws reaches past the box it was given");
+
+        var cut = draw(true);
+        assert(cut.get(0, 0).char == "A", "clipped, what fits is still drawn");
+        assert(cut.get(5, 0).char == ".", "and what does not fit no longer reaches the neighbour");
+
+        // A fact about the tree, not about this layout: it crosses back out.
+        var view = new HStack([new Text("x")], 0);
+        view.modifiers.push(cui.modifiers.ViewModifier.Clip);
+        var said = cui.nui.Describe.describe(view);
+        var types = [for (m in said.modifiers) m.type];
+        assert(types.indexOf(nui.Modifiers.CLIP) >= 0, "and clip is described by its canonical name");
+
+        // And comes back in.
+        var built = cui.nui.NodeRenderer.build(new nui.Node("HStack")
+            .modifier({type: nui.Modifiers.CLIP}));
+        assert(built.isClipped(), "a received clip reaches the view");
+    }
+
     // --- View render tests ---
 
     static function testTextRender():Void {
@@ -1106,8 +1155,30 @@ class TestAll {
         testReceivedControls();
         testPassword();
         testVocabulary();
+        testClip();
 
         Sys.println('\n$passed passed, $failed failed');
         if (failed > 0) Sys.exit(1);
     }
+}
+
+/**
+	A view that writes past whatever rectangle it is handed.
+
+	Nothing in `cui` does this on purpose -- a `Text` wraps to its width -- but
+	nothing stops one either: `Buffer.set` clips to the terminal, not to a
+	view. That is the gap `Clip` closes, and proving it needs a child that
+	actually overdraws rather than one that happens to behave.
+**/
+class Overdrawer extends cui.View {
+	public function new() super();
+
+	override public function measure(c:cui.layout.Constraint):cui.layout.Size
+		return new cui.layout.Size(12, 1);
+
+	override public function render(buffer:cui.render.Buffer, area:cui.layout.Rect):Void {
+		var word = "ABCDEFGHIJKL";
+		for (i in 0...word.length)
+			buffer.set(area.x + i, area.y, word.charAt(i), new cui.render.Style());
+	}
 }

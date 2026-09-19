@@ -123,7 +123,7 @@ class Tabs extends View {
         // Render active tab content
         if (inner.height > 2 && activeIdx >= 0 && activeIdx < tabs.length) {
             var contentArea = new Rect(inner.x, inner.y + 2, inner.width, inner.height - 2);
-            tabs[activeIdx].content.render(buffer, contentArea);
+            tabs[activeIdx].content.renderInto(buffer, contentArea);
         }
     }
 

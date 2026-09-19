@@ -37,6 +37,9 @@ enum ViewModifier {
     // Border
     Border(style:BorderStyle);
 
+    /** Children are cut at this view's edge. `nui.Modifiers.CLIP`. **/
+    Clip;
+
     // Visibility
     Hidden;
 }

@@ -75,7 +75,7 @@ class Box extends View {
 
         if (child != null) {
             var inner = area.inner(insets);
-            child.render(buffer, inner);
+            child.renderInto(buffer, inner);
         }
     }
 }

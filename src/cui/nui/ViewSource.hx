@@ -144,6 +144,7 @@ class ViewSource implements NodeSource<View> {
 			case HeightPolicy(p): {type: "height", strings: [Std.string(p)]};
 			case ContentAlignment(a): {type: "alignment", strings: [Std.string(a)]};
 			case Border(s): {type: "border", strings: [Std.string(s)]};
+			case Clip: {type: nui.Modifiers.CLIP};
 			case _: {type: Std.string(m)};
 		}
 	}

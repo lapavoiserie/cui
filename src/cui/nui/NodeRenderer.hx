@@ -205,6 +205,12 @@ class NodeRenderer {
 				case "backgroundColor":
 					var c = colorOf(m.strings);
 					if (c != null) view.modifiers.push(BackgroundColor(c));
+				// A terminal CAN cut: render into a buffer of your own and
+				// copy back only the window you own, which is what
+				// `cui.ui.ScrollView` has done since before there was a canon.
+				// This said "no terminal equivalent" and dropped it silently.
+				case nui.Modifiers.CLIP:
+					view.modifiers.push(Clip);
 				case _:
 					// No terminal equivalent — skipped on purpose.
 			}

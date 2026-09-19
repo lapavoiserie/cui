@@ -69,7 +69,7 @@ class ForEach<T> extends View {
             }
             if (h <= 0) { yOffset += spacing; continue; }
 
-            child.render(buffer, new Rect(inner.x, yOffset, inner.width, h));
+            child.renderInto(buffer, new Rect(inner.x, yOffset, inner.width, h));
             yOffset += h + spacing;
         }
     }

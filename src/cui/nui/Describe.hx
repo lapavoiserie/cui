@@ -222,6 +222,11 @@ class Describe {
 				case HeightPolicy(p): {type: "height", strings: [Std.string(p)]};
 				case ContentAlignment(a): {type: "alignment", strings: [Std.string(a)]};
 				case Border(s): {type: "border", strings: [Std.string(s)]};
+				case Clip: {type: nui.Modifiers.CLIP};
+				// A name the canon does not know, sent as the enum's own
+				// spelling: `Bold` rather than any canonical word. It crosses
+				// as itself and a receiver skips it, which is the honest
+				// answer for a decoration that is cui's alone.
 				case _: {type: Std.string(m)};
 			}
 			// A colour the wire cannot name -- the terminal's own default --

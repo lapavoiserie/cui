@@ -170,6 +170,54 @@ class View {
         return BorderStyle.None;
     }
 
+    /**
+        Whether this view cuts its children at its own edge.
+
+        `nui`'s `clip` modifier, which this backend named as a canonical
+        decoration and then dropped: `NodeRenderer.applyModifiers` had no case
+        for it and said "no terminal equivalent -- skipped on purpose". There
+        is one. `ScrollView` has used it since before there was a canon:
+        render into a buffer of your own, copy back only the window you own.
+    **/
+    public function isClipped():Bool {
+        for (mod in modifiers) {
+            switch (mod) {
+                case Clip: return true;
+                default:
+            }
+        }
+        return false;
+    }
+
+    /**
+        Draw a child, cut to `area` if that child asked to be cut.
+
+        Every container calls this rather than `render` directly. Without it a
+        child writes into the SHARED screen buffer and nothing intersects its
+        writes with the rectangle it was given -- `Buffer.set` clips to the
+        terminal, not to a view -- so a row too narrow for its labels drew over
+        whatever stood beside it.
+
+        The scratch buffer re-bases the child at its own origin, exactly as
+        `ScrollView` does, and only the cells inside `area` are copied back.
+        Allocated only for a view that asked: a buffer per child per frame
+        would be a real cost in a terminal that redraws whole screens.
+    **/
+    public function renderInto(buffer:Buffer, area:Rect):Void {
+        if (!isClipped() || area.width <= 0 || area.height <= 0) {
+            render(buffer, area);
+            return;
+        }
+        var scratch = new Buffer(area.width, area.height);
+        render(scratch, new Rect(0, 0, area.width, area.height));
+        for (y in 0...area.height) {
+            for (x in 0...area.width) {
+                var cell = scratch.get(x, y);
+                buffer.set(area.x + x, area.y + y, cell.char, cell.style);
+            }
+        }
+    }
+
     public function isHidden():Bool {
         for (mod in modifiers) {
             switch (mod) {

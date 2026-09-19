@@ -20,6 +20,6 @@ class ViewComponent extends View {
     }
 
     override public function render(buffer:Buffer, area:Rect):Void {
-        body().render(buffer, area);
+        body().renderInto(buffer, area);
     }
 }

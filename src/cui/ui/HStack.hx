@@ -115,7 +115,7 @@ class HStack extends View {
             if (w <= 0) { xOffset += spacing; continue; }
 
             var childArea = new Rect(xOffset, inner.y, w, inner.height);
-            child.render(buffer, childArea);
+            child.renderInto(buffer, childArea);
 
             xOffset += w + spacing;
         }

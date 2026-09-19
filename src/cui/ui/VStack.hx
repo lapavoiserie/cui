@@ -117,7 +117,7 @@ class VStack extends View {
             if (h <= 0) { yOffset += spacing; continue; }
 
             var childArea = new Rect(inner.x, yOffset, inner.width, h);
-            child.render(buffer, childArea);
+            child.renderInto(buffer, childArea);
 
             yOffset += h + spacing;
         }
