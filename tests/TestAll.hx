@@ -950,6 +950,43 @@ class TestAll {
     static function testVocabulary():Void {
         section("Vocabulary");
 
+        // --- colour ---
+        //
+        // cui described a colour as `Std.string` of its enum value -- literally
+        // "Named(Red)" on the wire -- and the receiving side parsed only bare
+        // names like "red". So a colour did not survive a round trip at ALL: it
+        // came back as nothing. Nobody had looked at a coloured tree crossing.
+        for (colour in [cui.render.Color.Named(Red), cui.render.Color.Rgb(200, 50, 60),
+                cui.render.Color.Role("danger")]) {
+            var painted = new cui.ui.Text("x");
+            painted.backgroundColor(colour);
+            var sent = cui.nui.Describe.describe(painted);
+            var again = cui.nui.Describe.describe(NodeRenderer.build(sent));
+            assert(again.modifiers.length == 1
+                && again.modifiers[0].strings[0] == sent.modifiers[0].strings[0],
+                "a colour survives the round trip: " + Std.string(colour)
+                + " -> " + Std.string(sent.modifiers[0].strings));
+        }
+
+        // A ROLE STAYS A ROLE. Resolved on the way through, a tree relayed by a
+        // terminal would reach the far end carrying a number, with nothing left
+        // to say it had ever been a role.
+        var relayed = new cui.ui.Text("STREAM");
+        relayed.backgroundColor(cui.render.Color.Role("danger"));
+        assert(cui.nui.Describe.describe(relayed).modifiers[0].strings[0] == "role:danger",
+            "and a role is still a role after it");
+
+        // A role becomes one of the sixteen, so it follows the palette the
+        // person set -- better than exact, not worse.
+        assert(cui.nui.Colors.named("danger") == BrightRed
+            && cui.nui.Colors.named("success") == BrightGreen,
+            "a role is drawn in one of the terminal's own sixteen");
+        assert(cui.nui.Colors.resolve("#c8323c80") != null
+            && Std.string(cui.nui.Colors.resolve("#c8323c80")) == "Rgb(200,50,60)",
+            "components are exact, and opacity is dropped: a cell is opaque");
+        assert(cui.nui.Colors.resolve("red") == null,
+            "and a named colour does not cross");
+
         assert(CuiProbe.verify() == 14, "every declared control is read, and none refused");
 
         // THE ONE THAT MATTERED. `cui.ui.Password` extends `cui.ui.Input`, and

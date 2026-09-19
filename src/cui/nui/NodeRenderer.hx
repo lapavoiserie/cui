@@ -217,19 +217,16 @@ class NodeRenderer {
 		`#00A6BE`, which Silica takes happily, has no faithful equivalent here
 		and is skipped rather than approximated.
 	**/
+	/**
+		The colour the wire said, through the canon.
+
+		This used to parse bare names -- `red`, `blue` -- which do not cross;
+		`nui.Color` says why. A role is kept as the word and resolved when the
+		escape is emitted, so a relayed tree keeps its roles. See
+		`cui.nui.Colors`.
+	**/
 	static function colorOf(strings:Array<String>):Null<Color> {
 		if (strings == null || strings.length == 0) return null;
-		var named:Null<NamedColor> = switch (strings[0].toLowerCase()) {
-			case "red": Red;
-			case "green": Green;
-			case "yellow": Yellow;
-			case "blue": Blue;
-			case "magenta": Magenta;
-			case "cyan": Cyan;
-			case "white": White;
-			case "black": Black;
-			case _: null;
-		}
-		return named == null ? null : Color.Named(named);
+		return Colors.resolve(StringTools.trim(strings[0]));
 	}
 }

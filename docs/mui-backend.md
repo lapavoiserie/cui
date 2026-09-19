@@ -162,6 +162,41 @@ IS a padded stack — reached without an ordered list.
 are: the first two flatten, and the third extends `VStack`, so it is asked
 before the declarations.
 
+## Colour, and the sixteen
+
+A `nui.Color` arrives as a word — `role:danger` or `#c8323c` — and `cui`
+resolves it the way a terminal can.
+
+**A role becomes one of the sixteen**, and the sixteen are the ones the person
+chose: the reds and blues of their own theme. A `danger` comes out in *their*
+red, which is better than exact rather than worse — `#DC2626` picked on somebody
+else's machine is a number that ignores everything this terminal knows.
+
+The role is kept as a word (`cui.render.Color.Role`) until `Style` emits the
+escape, so **a relayed tree keeps its roles**. A terminal that resolved one on
+the way through would send a number onward with nothing left to say it had ever
+been a role.
+
+**Components are exact** where the terminal allows it: `Rgb` emits a truecolor
+escape. **Opacity is dropped** — a cell is opaque, there is nothing behind it to
+blend with, and a half-transparent red drawn solid is the closest honest answer.
+
+Leaving here, one of the sixteen becomes conventional components, because the
+wire has no way to say "the red this person chose". That is the one
+approximation in the pair, and it is in the direction where nothing better
+exists.
+
+### What this corrected
+
+`cui` described a colour as `Std.string` of its enum value — literally
+`Named(Red)` on the wire — and the receiving side parsed only bare names like
+`red`. So a colour did not survive a round trip **at all**: it came back as
+nothing. Nobody had looked at a coloured tree crossing.
+
+Named colours are no longer accepted either. They do not cross — `nui.Color`
+says why — and taking them invited a sender to rely on something no canon
+promised.
+
 ## See also
 
 - [Adding a backend](https://lapavoiserie.github.io/mui/#/adding-a-backend) — the

@@ -50,6 +50,7 @@ class Style {
             case [Named(c1), Named(c2)]: Type.enumIndex(c1) == Type.enumIndex(c2);
             case [Indexed(i1), Indexed(i2)]: i1 == i2;
             case [Rgb(r1, g1, b1), Rgb(r2, g2, b2)]: r1 == r2 && g1 == g2 && b1 == b2;
+            case [Role(a), Role(b)]: a == b;
             default: false;
         };
     }
@@ -61,6 +62,8 @@ class Style {
         switch (fg) {
             case Default:
             case Named(c): parts.push("\x1b[" + namedFg(c) + "m");
+            // Resolved here, where the terminal's own palette applies.
+            case Role(name): parts.push("\x1b[" + namedFg(cui.nui.Colors.named(name)) + "m");
             case Indexed(i): parts.push("\x1b[38;5;" + i + "m");
             case Rgb(r, g, b): parts.push("\x1b[38;2;" + r + ";" + g + ";" + b + "m");
         }
@@ -68,6 +71,7 @@ class Style {
         switch (bg) {
             case Default:
             case Named(c): parts.push("\x1b[" + namedBg(c) + "m");
+            case Role(name): parts.push("\x1b[" + namedBg(cui.nui.Colors.named(name)) + "m");
             case Indexed(i): parts.push("\x1b[48;5;" + i + "m");
             case Rgb(r, g, b): parts.push("\x1b[48;2;" + r + ";" + g + ";" + b + "m");
         }

@@ -211,8 +211,11 @@ class Describe {
 		if (view.modifiers == null) return;
 		for (m in view.modifiers) {
 			var described:nui.Modifier = switch (m) {
-				case ForegroundColor(c): {type: "foregroundColor", strings: [Std.string(c)]};
-				case BackgroundColor(c): {type: "backgroundColor", strings: [Std.string(c)]};
+				// `Std.string` of the enum VALUE used to go on the wire here --
+				// literally `Named(Red)` -- and the receiving side parsed only
+				// bare names, so a colour did not survive a round trip at all.
+				case ForegroundColor(c): said(nui.Modifiers.FOREGROUND_COLOR, c);
+				case BackgroundColor(c): said(nui.Modifiers.BACKGROUND_COLOR, c);
 				case PaddingAll(v): {type: "padding", floats: [v]};
 				case PaddingEdges(t, r, b, l): {type: "padding", floats: [t, r, b, l]};
 				case WidthPolicy(p): {type: "width", strings: [Std.string(p)]};
@@ -221,7 +224,15 @@ class Describe {
 				case Border(s): {type: "border", strings: [Std.string(s)]};
 				case _: {type: Std.string(m)};
 			}
-			out.modifier(described);
+			// A colour the wire cannot name -- the terminal's own default --
+			// is no modifier at all rather than an empty one.
+			if (described != null) out.modifier(described);
 		}
+	}
+
+	/** One colour modifier, in the canon's words. See `cui.nui.Colors`. **/
+	static function said(type:String, colour:cui.render.Color):Null<nui.Modifier> {
+		var word = Colors.say(colour);
+		return word == null ? null : {type: type, strings: [word]};
 	}
 }
