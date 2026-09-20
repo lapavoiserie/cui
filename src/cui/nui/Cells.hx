@@ -25,4 +25,26 @@ class Cells {
 
 	public static function stringCell(value:String, tell:String->Void):cui.state.Binding<String>
 		return new cui.state.Binding(() -> value, v -> tell(v));
+
+	/**
+		The same four, told where the control was written.
+
+		`nui.macros.Construct` hands a markup element's place to every
+		backend, because a factory that takes it on one and not on another is
+		two shapes of the same question. This backend keeps nothing under it:
+		its cell is an ordinary object, collected when the view that held it
+		is. `aui` is the one that needs it -- its cells live in a registry and
+		a fresh one per rebuild would grow that map for good.
+	**/
+	public static function boolCellAt(site:String, value:Bool, tell:Bool->Void)
+		return boolCell(value, tell);
+
+	public static function intCellAt(site:String, value:Int, tell:Int->Void)
+		return intCell(value, tell);
+
+	public static function floatCellAt(site:String, value:Float, tell:Float->Void)
+		return floatCell(value, tell);
+
+	public static function stringCellAt(site:String, value:String, tell:String->Void)
+		return stringCell(value, tell);
 }
