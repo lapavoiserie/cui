@@ -186,7 +186,14 @@ class NodeRenderer {
 		parameters, cui's enum is typed. Entries with no cui equivalent are
 		skipped — a terminal has no notion of most of them.
 	**/
-	static function applyModifiers(view:View, modifiers:Array<nui.Modifier>):Void {
+	/**
+		Put a modifier chain on a view.
+
+		Public because `mui`'s markup reaches it too: a backend that builds its
+		own controls from markup hands its decorations here rather than
+		carrying a second table. See `cui.nui.Vocabulary.registerWithMui`.
+	**/
+	public static function applyModifiers(view:View, modifiers:Array<nui.Modifier>):Void {
 		if (modifiers == null) return;
 		for (m in modifiers) {
 			switch (m.type) {

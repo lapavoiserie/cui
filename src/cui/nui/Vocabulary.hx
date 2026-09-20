@@ -21,7 +21,22 @@ class Vocabulary {
 	public static var DUMMY(default, never):Int = 0;
 
 	#if macro
-	public static final DIALECT:Dialect = {pack: "cui.ui", view: "cui.View"};
+	/**
+		What the declaration readers are told about this backend.
+
+		`cells` and `readers` used to live only in `cui.nui.Derive`, because
+		only the generated builders needed them. `nui.macros.Construct` needs
+		the same two -- it builds the same controls, one stage earlier, from
+		markup -- and a second copy of the answer is a second place to get it
+		wrong. One dialect, both readers.
+	**/
+	public static final DIALECT:Dialect = {
+		pack: "cui.ui",
+		view: "cui.View",
+		readers: "cui.nui.NodeRenderer",
+		cells: "cui.nui.Cells",
+		appendChildren: "cui.nui.Describe.appendChildren",
+	};
 
 	public static function types():Map<String, String>
 		return Declarations.types(DIALECT);
@@ -44,6 +59,24 @@ class Vocabulary {
 			requiredOf: requiredOf,
 			kindOf: attributeKind,
 			types: () -> [for (type in types().keys()) type],
+			// Markup becomes `new cui.ui.VStack(...)` rather than a node the
+			// renderer reads back. Behind `-D mui_views` while the two shapes
+			// coexist: with it on, `ui()` answers a `cui.View` instead of a
+			// `nui.Node`, which is the point and is also a change of type at
+			// every call site. See `mui.macros.Backend.Vocabulary.viewOf`.
+			#if mui_views
+			viewOf: (tag, given, children, pos) ->
+				nui.macros.Construct.expr(DIALECT, tag, given, children, pos),
+			// The canon's nine, mapped where they were already mapped: a
+			// second table here would be a second place for `border` to mean
+			// something slightly different.
+			decorate: (view, modifiers, pos) -> macro {
+				var __view = $view;
+				cui.nui.NodeRenderer.applyModifiers(__view,
+					[for (__m in ($modifiers : Array<Null<nui.Modifier>>)) if (__m != null) __m]);
+				__view;
+			},
+			#end
 		});
 	}
 	#else

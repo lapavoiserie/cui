@@ -16,12 +16,6 @@ class Derive {
 	#if macro
 	/** Build `cui.nui.Derived`'s two maps from what the controls declare. **/
 	public static function build():Array<Field>
-		return nui.macros.Derive.build({
-			pack: "cui.ui",
-			view: "cui.View",
-			cells: "cui.nui.Cells",
-			readers: "cui.nui.NodeRenderer",
-			appendChildren: "cui.nui.Describe.appendChildren",
-		});
+		return nui.macros.Derive.build(cui.nui.Vocabulary.DIALECT);
 	#end
 }
