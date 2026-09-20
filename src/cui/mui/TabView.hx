@@ -22,8 +22,14 @@ class TabView extends cui.ui.Tabs {
         drives the selection. Leaving it out gets a selection this view owns.
     **/
     public function new(tabs:Array<TabItem>, ?active:cui.ui.Tabs.TabSelection) {
-        super([for (t in tabs) {label: t.label, content: t.content}],
-            active != null ? active : ownSelection());
+        // Only the chosen tab carries its page, which is the canon's rule and
+        // now this backend's shape too: `cui.ui.Tabs` takes `Tab` views.
+        var selection = active != null ? active : ownSelection();
+        var chosen = selection.get();
+        super([
+            for (i in 0...tabs.length)
+                new cui.ui.Tab(tabs[i].label, i == chosen ? tabs[i].content : null)
+        ], selection);
     }
 
     /**

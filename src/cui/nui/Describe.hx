@@ -134,22 +134,14 @@ class Describe {
 		// These are asked BEFORE the declarations, and that is the one place
 		// order still matters here. Three named exceptions rather than
 		// twenty-two ordered branches, and each says why.
-		if (Std.isOfType(view, cui.ui.Tabs)) {
-			// A snapshot is one picture: the active tab's content, flattened.
-			// Carrying every page would describe views the terminal is not
-			// showing, and the receiving side has no tab chrome to offer.
-			var tabs:cui.ui.Tabs = cast view;
-			trace("cui.nui.Describe: TabView flattened to its active tab");
-			var active = tabs.activeBinding.get();
-			out = new Node("VStack");
-			if (active >= 0 && active < tabs.tabs.length) {
-				var content = tabs.tabs[active].content;
-				var into:Array<Node> = [];
-				if (content != null && !expanded(content, into)) into.push(node(content));
-				for (child in into) out.child(child);
-			}
-
-		} else if (Std.isOfType(view, cui.ui.ListView)) {
+		// `Tabs` used to be flattened here, to a VStack of its active page,
+		// "because a snapshot is one picture and the receiving side has no tab
+		// chrome to offer". The canon has said otherwise since it gained
+		// `Tabs`/`Tab`: only the chosen tab carries a page, so the tree is
+		// already one picture, and the titles -- which a receiver needs to
+		// draw the bar -- were exactly what flattening threw away. The
+		// declarations describe it now.
+		if (Std.isOfType(view, cui.ui.ListView)) {
 			// The selection machinery has no wire canon yet; the rows do.
 			var list:cui.ui.ListView = cast view;
 			trace("cui.nui.Describe: ListView described as its rows");

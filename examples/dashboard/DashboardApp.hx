@@ -28,7 +28,7 @@ class DashboardApp extends App {
                 new Text("\u2190\u2192: tabs | \u2191\u2193: list | Ctrl+C: quit ")
                     .dim(),
             ], 0),
-            cast(new Tabs([
+            cast(Tabs.of([
                 { label: "Overview", content: overviewTab() },
                 { label: "Services", content: servicesTab() },
                 { label: "Logs", content: logsTab() },

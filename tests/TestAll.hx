@@ -283,16 +283,34 @@ class TestAll {
 
         // Cut, not dropped: the fourth tab's first letters are still there.
         var tabs = new cui.ui.Tabs([
-            {label: "Source", content: new cui.ui.Text("")},
-            {label: "Transitions", content: new cui.ui.Text("")},
+            new cui.ui.Tab("Source", new cui.ui.Text("")),
+            new cui.ui.Tab("Transitions"),
         ], new cui.ui.Tabs.TabSelection(() -> 0, v -> {}));
         buf = fresh(30);
         tabs.render(buf, new Rect(0, 0, 12, 3));
         assert(buf.get(13, 0).char == ".", "a tab bar stops at its own edge");
         var bar = "";
         for (x in 0...12) bar += buf.get(x, 0).char;
+
         // " Source │ Tr": the second tab is cut to what fits. It used to end
         // the loop, leaving " Source │" and blank to the edge.
+        // The canon's shape, both ways: a received `Tabs` builds one, and a
+        // built one describes as `Tabs` with `Tab` children carrying titles --
+        // which is what flattening it to a VStack used to throw away.
+        var received = cui.nui.NodeRenderer.build(new nui.Node("Tabs")
+            .prop("selectedIndex", nui.PropValue.PInt(1))
+            .child(new nui.Node("Tab").prop("label", nui.PropValue.PString("Source")))
+            .child(new nui.Node("Tab").prop("label", nui.PropValue.PString("Diffusion"))));
+        assert(Std.isOfType(received, cui.ui.Tabs), "a received Tabs builds a Tabs");
+
+        var said = cui.nui.Describe.describe(tabs);
+        assert(said.type == "Tabs" && said.children.length == 2
+            && said.children[0].type == "Tab",
+            "and a Tabs describes as Tabs with Tab children");
+        assert(nui.PropValue.PropValueTools.asString(
+            said.children[1].props.get("label")) == "Transitions",
+            "whose titles cross: flattening to a VStack lost exactly those");
+
         assert(bar.indexOf("Tr") >= 0,
             "and the tab that does not fit is cut rather than dropped, as pui cuts it");
     }
@@ -1088,7 +1106,7 @@ class TestAll {
         assert(cui.nui.Colors.resolve("red") == null,
             "and a named colour does not cross");
 
-        assert(CuiProbe.verify() == 14, "every declared control is read, and none refused");
+        assert(CuiProbe.verify() == 16, "every declared control is read, and none refused");
 
         // THE ONE THAT MATTERED. `cui.ui.Password` extends `cui.ui.Input`, and
         // `Describe` chose its branch with `Std.isOfType` in written order --
