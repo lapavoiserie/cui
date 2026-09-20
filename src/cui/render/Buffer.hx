@@ -69,7 +69,20 @@ class Buffer {
 
         Returns the number of cells written, which is not the string's length.
     **/
-    public function writeString(x:Int, y:Int, text:String, style:Style):Int {
+    /**
+        Write text, stopping at `limit` — the first column it may NOT touch.
+
+        Without one it stops at the terminal's edge, which is not the same
+        thing: a control writes into the SHARED buffer, so a title longer than
+        the box its control was given landed on whatever stood beside it. The
+        limit is how a control cuts its own content at its own edge, which is
+        what `pui` does by clipping and a terminal has to do by counting.
+
+        Default -1, meaning the buffer's width, so every existing call means
+        exactly what it meant.
+    **/
+    public function writeString(x:Int, y:Int, text:String, style:Style, limit:Int = -1):Int {
+        var edge = limit < 0 || limit > width ? width : limit;
         var written = 0;
         for (i in 0...text.length) {
             if (combining(text.charCodeAt(i)) && written > 0) {
@@ -81,7 +94,7 @@ class Buffer {
                 continue;
             }
             var px = x + written;
-            if (px >= width) break;
+            if (px >= edge) break;
             if (px >= 0 && y >= 0 && y < height) {
                 set(px, y, text.charAt(i), style);
             }

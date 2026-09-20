@@ -123,9 +123,16 @@ class Picker extends View {
         var style = getEffectiveStyle();
         var focused = isFocused();
 
+        // Everything below is cut at this control's own right edge. Nothing
+        // was, and `Buffer.writeString` stops at the TERMINAL's edge -- so a
+        // picker narrower than its label and its value wrote straight over
+        // whatever stood beside it, which is what a segmented picker did in
+        // the Farceur window and what `pui.ui.Picker` now cuts.
+        var edge = area.x + area.width;
+
         var x = area.x;
         if (label.length > 0) {
-            buffer.writeString(x, area.y, label, style);
+            buffer.writeString(x, area.y, label, style, edge);
             x += label.length + 1;
         }
 
@@ -137,19 +144,19 @@ class Picker extends View {
 
         var left = arrow.clone();
         if (at <= 0) left.dim = true;
-        buffer.writeString(x, area.y, LEFT, left);
+        buffer.writeString(x, area.y, LEFT, left, edge);
 
         var value = style.clone();
         if (focused) value.inverse = true;
-        buffer.writeString(x + 2, area.y, chosen(), value);
+        buffer.writeString(x + 2, area.y, chosen(), value, edge);
 
         var right = arrow.clone();
         if (at < 0 || at >= options.length - 1) right.dim = true;
-        buffer.writeString(x + 2 + valueWidth() + 1, area.y, RIGHT, right);
+        buffer.writeString(x + 2 + valueWidth() + 1, area.y, RIGHT, right, edge);
 
         var trail = style.clone();
         trail.dim = true;
-        buffer.writeString(x + 4 + valueWidth(), area.y, position(), trail);
+        buffer.writeString(x + 4 + valueWidth(), area.y, position(), trail, edge);
     }
 
     /** Move by one, staying inside the list. Answers whether anything moved. **/

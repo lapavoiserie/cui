@@ -245,6 +245,58 @@ class TestAll {
         assert(built.isClipped(), "a received clip reaches the view");
     }
 
+    /**
+        A control too narrow cuts its OWN content at its OWN edge.
+
+        `Buffer.writeString` stops at the terminal's edge, not at the box a
+        control was given, and nothing here passed a narrower one. So a picker,
+        a button or a tab bar wider than its box wrote straight over whatever
+        stood beside it -- the same defect `pui` had inside `Tabs` and the
+        segmented `Picker`, found at the image in the Farceur window.
+
+        The tab bar also changes policy rather than only gaining a bound: a tab
+        that did not fit used to END the loop, so it and every tab after it
+        vanished and a person could not see that a section existed. It is cut
+        now, as `pui` cuts it. The two backends should not disagree about what
+        a narrow bar means.
+    **/
+    static function testControlsCut():Void {
+        section("Controls cut their own content");
+
+        // A marker to the right of each control, standing for a neighbour.
+        function fresh(width:Int):Buffer {
+            var buf = new Buffer(width, 3);
+            for (y in 0...3) for (x in 0...width) buf.set(x, y, ".", new cui.render.Style());
+            return buf;
+        }
+
+        var picker = new cui.ui.Picker("Scène", ["Aperçu · Replay", "Programme · Titre"],
+            new cui.ui.Picker.PickerBinding(() -> 0, v -> {}));
+        var buf = fresh(30);
+        picker.render(buf, new Rect(0, 0, 10, 1));
+        assert(buf.get(11, 0).char == ".", "a picker narrower than its content stops at its own edge");
+
+        var button = new cui.ui.Button("Démarrer la diffusion", () -> {});
+        buf = fresh(30);
+        button.render(buf, new Rect(0, 0, 8, 1));
+        assert(buf.get(9, 0).char == ".", "and so does a button whose label is longer than it is");
+
+        // Cut, not dropped: the fourth tab's first letters are still there.
+        var tabs = new cui.ui.Tabs([
+            {label: "Source", content: new cui.ui.Text("")},
+            {label: "Transitions", content: new cui.ui.Text("")},
+        ], new cui.ui.Tabs.TabSelection(() -> 0, v -> {}));
+        buf = fresh(30);
+        tabs.render(buf, new Rect(0, 0, 12, 3));
+        assert(buf.get(13, 0).char == ".", "a tab bar stops at its own edge");
+        var bar = "";
+        for (x in 0...12) bar += buf.get(x, 0).char;
+        // " Source │ Tr": the second tab is cut to what fits. It used to end
+        // the loop, leaving " Source │" and blank to the edge.
+        assert(bar.indexOf("Tr") >= 0,
+            "and the tab that does not fit is cut rather than dropped, as pui cuts it");
+    }
+
     // --- View render tests ---
 
     static function testTextRender():Void {
@@ -1156,6 +1208,7 @@ class TestAll {
         testPassword();
         testVocabulary();
         testClip();
+        testControlsCut();
 
         Sys.println('\n$passed passed, $failed failed');
         if (failed > 0) Sys.exit(1);

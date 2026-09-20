@@ -96,23 +96,28 @@ class Button extends View {
 
         // Written in pieces rather than as one string: an icon may take two
         // cells for one character, which no string length can say.
+        // Cut at this button's own right edge. `Buffer.writeString` stops at
+        // the TERMINAL's, so a label longer than the button wrote over its
+        // neighbour -- the same defect `pui` had inside its own controls.
+        var edge = inner.x + inner.width;
+
         var at = inner.x + xOffset;
-        at += buffer.writeString(at, inner.y, "[ ", renderStyle);
+        at += buffer.writeString(at, inner.y, "[ ", renderStyle, edge);
         var width = iconWidth();
         if (width > 0) {
             var glyph = cui.nui.Icons.glyphOf(icon);
             switch (cui.nui.Icons.roomOf(icon)) {
-                case Wide: buffer.setWide(at, inner.y, glyph, renderStyle);
+                case Wide: if (at + 1 < edge) buffer.setWide(at, inner.y, glyph, renderStyle);
                 case Inked:
-                    buffer.writeString(at, inner.y, glyph, renderStyle);
-                    buffer.set(at + 1, inner.y, " ", renderStyle);
-                case One: buffer.writeString(at, inner.y, glyph, renderStyle);
+                    buffer.writeString(at, inner.y, glyph, renderStyle, edge);
+                    if (at + 1 < edge) buffer.set(at + 1, inner.y, " ", renderStyle);
+                case One: buffer.writeString(at, inner.y, glyph, renderStyle, edge);
             }
             at += width;
-            if (label != "") at += buffer.writeString(at, inner.y, " ", renderStyle);
+            if (label != "") at += buffer.writeString(at, inner.y, " ", renderStyle, edge);
         }
-        at += buffer.writeString(at, inner.y, label, renderStyle);
-        buffer.writeString(at, inner.y, " ]", renderStyle);
+        at += buffer.writeString(at, inner.y, label, renderStyle, edge);
+        buffer.writeString(at, inner.y, " ]", renderStyle, edge);
     }
 
     override public function handleEvent(event:Event):Bool {

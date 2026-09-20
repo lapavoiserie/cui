@@ -96,10 +96,15 @@ class Tabs extends View {
                 tabStyle.dim = true;
             }
 
+            // Cut, not dropped. A tab that did not fit used to end the loop,
+            // so it and every tab after it vanished -- a person could not see
+            // that a section existed at all. `pui` shortens the title and
+            // keeps the tab, and the two backends should not disagree about
+            // what a narrow bar means.
             var label = " " + tab.label + " ";
-            if (x + label.length > inner.x + inner.width) break;
-            buffer.writeString(x, inner.y, label, tabStyle);
-            x += label.length;
+            var edge = inner.x + inner.width;
+            if (x >= edge) break;
+            x += buffer.writeString(x, inner.y, label, tabStyle, edge);
 
             // Separator between tabs
             if (i < tabs.length - 1 && x < inner.x + inner.width) {
