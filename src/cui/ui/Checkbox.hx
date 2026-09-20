@@ -10,7 +10,30 @@ import cui.render.Buffer;
 import cui.render.Style;
 import cui.state.State;
 
-class CheckboxBinding {
+/**
+	CheckboxBinding, or the cell itself.
+
+	The class below is the implementation and stays exactly what it was. This
+	abstract in front of it carries the one thing a class cannot declare -- an
+	implicit cast -- so a field, a toggle or a slider can be handed the state
+	cell directly.
+
+	`mui`'s markup binds the CELL, because that is what a view written by hand
+	binds, and it could not reach any of these: `<Toggle isOn={lit_}/>` failed
+	to compile with *should be CheckboxBinding* on a backend that declares the tag and
+	draws it. `pui` has the same shape for the same reason
+	(`pui.ui.TextInputBinding`).
+**/
+@:forward
+abstract CheckboxBinding(CheckboxBindingCell) from CheckboxBindingCell to CheckboxBindingCell {
+	public inline function new(getFn:Void->Bool, setFn:Bool->Void)
+		this = new CheckboxBindingCell(getFn, setFn);
+
+	@:from public static inline function fromState(state:BoolState):CheckboxBinding
+		return CheckboxBindingCell.fromState(state);
+}
+
+class CheckboxBindingCell {
     var _get:Void->Bool;
     var _set:Bool->Void;
 
@@ -31,8 +54,8 @@ class CheckboxBinding {
         _set(!_get());
     }
 
-    public static function fromState(state:BoolState):CheckboxBinding {
-        return new CheckboxBinding(
+    public static function fromState(state:BoolState):CheckboxBindingCell {
+        return new CheckboxBindingCell(
             () -> state.get(),
             (v) -> state.set(v)
         );

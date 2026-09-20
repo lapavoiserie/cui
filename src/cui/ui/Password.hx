@@ -20,7 +20,7 @@ import cui.state.Binding;
 @:prop("placeholder")
 @:action("onSubmit", "onSubmit")
 class Password extends Input {
-	public function new(binding:Binding<String>, placeholder:String = "") {
+	public function new(binding:cui.state.TextBinding, placeholder:String = "") {
 		super(binding, placeholder);
 		this.masked = true;
 	}

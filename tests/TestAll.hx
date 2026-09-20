@@ -1106,7 +1106,12 @@ class TestAll {
         assert(cui.nui.Colors.resolve("red") == null,
             "and a named colour does not cross");
 
-        assert(CuiProbe.verify() == 16, "every declared control is read, and none refused");
+        // Nineteen since 2026-09-21: `ScrollView`, `Spacer` and `ZStack` were
+        // written but undeclared, which is why `mui/examples/kitchen-sink`
+        // could not be built for this backend. The number is asserted on
+        // purpose -- a control that stops being read should fail here rather
+        // than go missing from a screen.
+        assert(CuiProbe.verify() == 19, "every declared control is read, and none refused");
 
         // THE ONE THAT MATTERED. `cui.ui.Password` extends `cui.ui.Input`, and
         // `Describe` chose its branch with `Std.isOfType` in written order --

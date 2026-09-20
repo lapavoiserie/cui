@@ -106,7 +106,30 @@ class Slider extends View {
     }
 }
 
-class SliderBinding {
+/**
+	SliderBinding, or the cell itself.
+
+	The class below is the implementation and stays exactly what it was. This
+	abstract in front of it carries the one thing a class cannot declare -- an
+	implicit cast -- so a field, a toggle or a slider can be handed the state
+	cell directly.
+
+	`mui`'s markup binds the CELL, because that is what a view written by hand
+	binds, and it could not reach any of these: `<Toggle isOn={lit_}/>` failed
+	to compile with *should be SliderBinding* on a backend that declares the tag and
+	draws it. `pui` has the same shape for the same reason
+	(`pui.ui.TextInputBinding`).
+**/
+@:forward
+abstract SliderBinding(SliderBindingCell) from SliderBindingCell to SliderBindingCell {
+	public inline function new(getFn:Void->Float, setFn:Float->Void)
+		this = new SliderBindingCell(getFn, setFn);
+
+	@:from public static inline function fromState(state:FloatState):SliderBinding
+		return SliderBindingCell.fromState(state);
+}
+
+class SliderBindingCell {
     var _get:Void->Float;
     var _set:Float->Void;
 
@@ -123,8 +146,8 @@ class SliderBinding {
         _set(v);
     }
 
-    public static function fromState(state:FloatState):SliderBinding {
-        return new SliderBinding(
+    public static function fromState(state:FloatState):SliderBindingCell {
+        return new SliderBindingCell(
             () -> state.get(),
             (v) -> state.set(v)
         );

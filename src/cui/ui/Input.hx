@@ -82,7 +82,7 @@ class Input extends View {
     **/
     @:action("onSubmit") public var onSubmit:Null<Void->Void> = null;
 
-    public function new(binding:Binding<String>, placeholder:String = "") {
+    public function new(binding:cui.state.TextBinding, placeholder:String = "") {
         super();
         this.binding = binding;
         this.placeholder = placeholder;

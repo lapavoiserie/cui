@@ -35,7 +35,30 @@ import cui.state.State;
     If the buffer ever gains a z-order, this becomes a drop-down and the rest
     of the library does not change.
 **/
-class PickerBinding {
+/**
+	PickerBinding, or the cell itself.
+
+	The class below is the implementation and stays exactly what it was. This
+	abstract in front of it carries the one thing a class cannot declare -- an
+	implicit cast -- so a field, a toggle or a slider can be handed the state
+	cell directly.
+
+	`mui`'s markup binds the CELL, because that is what a view written by hand
+	binds, and it could not reach any of these: `<Toggle isOn={lit_}/>` failed
+	to compile with *should be PickerBinding* on a backend that declares the tag and
+	draws it. `pui` has the same shape for the same reason
+	(`pui.ui.TextInputBinding`).
+**/
+@:forward
+abstract PickerBinding(PickerBindingCell) from PickerBindingCell to PickerBindingCell {
+	public inline function new(getFn:Void->Int, setFn:Int->Void)
+		this = new PickerBindingCell(getFn, setFn);
+
+	@:from public static inline function fromState(state:IntState):PickerBinding
+		return PickerBindingCell.fromState(state);
+}
+
+class PickerBindingCell {
     var _get:Void->Int;
     var _set:Int->Void;
 
@@ -52,8 +75,8 @@ class PickerBinding {
         _set(v);
     }
 
-    public static function fromState(state:IntState):PickerBinding {
-        return new PickerBinding(
+    public static function fromState(state:IntState):PickerBindingCell {
+        return new PickerBindingCell(
             () -> state.get(),
             (v) -> state.set(v)
         );

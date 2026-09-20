@@ -11,7 +11,30 @@ import cui.render.Buffer;
 import cui.render.Style;
 import cui.state.State;
 
-class ScrollOffset {
+/**
+	ScrollOffset, or the cell itself.
+
+	The class below is the implementation and stays exactly what it was. This
+	abstract in front of it carries the one thing a class cannot declare -- an
+	implicit cast -- so a field, a toggle or a slider can be handed the state
+	cell directly.
+
+	`mui`'s markup binds the CELL, because that is what a view written by hand
+	binds, and it could not reach any of these: `<Toggle isOn={lit_}/>` failed
+	to compile with *should be ScrollOffset* on a backend that declares the tag and
+	draws it. `pui` has the same shape for the same reason
+	(`pui.ui.TextInputBinding`).
+**/
+@:forward
+abstract ScrollOffset(ScrollOffsetCell) from ScrollOffsetCell to ScrollOffsetCell {
+	public inline function new(getFn:Void->Int, setFn:Int->Void)
+		this = new ScrollOffsetCell(getFn, setFn);
+
+	@:from public static inline function fromState(state:IntState):ScrollOffset
+		return ScrollOffsetCell.fromState(state);
+}
+
+class ScrollOffsetCell {
     var _get:Void->Int;
     var _set:Int->Void;
 
@@ -28,25 +51,47 @@ class ScrollOffset {
         _set(v);
     }
 
-    public static function fromState(state:IntState):ScrollOffset {
-        return new ScrollOffset(
+    public static function fromState(state:IntState):ScrollOffsetCell {
+        return new ScrollOffsetCell(
             () -> state.get(),
             (v) -> state.set(v)
         );
     }
 }
 
+/**
+	A child taller than the space it is given, and a window onto it.
+
+	## The offset is optional, and that is the canon
+
+	It was required: `new ScrollView(child, offset)`, with the application
+	holding the position. The canon's `ScrollView` takes only its content --
+	`pui`'s does, `sui`'s does -- because where a view has been scrolled to is
+	the control's own business, not something a screen has to carry a cell for.
+	So markup could not write one here at all.
+
+	Given no binding, it keeps its own position. An application that wants to
+	read the position, restore it, or move it from elsewhere passes one, and
+	nothing about that changed.
+**/
+@:node("ScrollView")
+@:content("child")
 class ScrollView extends View {
     var child:View;
     var offsetBinding:ScrollOffset;
     var contentHeight:Int;
     var visibleHeight:Int;
 
-    public function new(child:View, offset:ScrollOffset) {
+    /** Where this view is scrolled to when nobody outside holds it. **/
+    var ownOffset:Int = 0;
+
+    public function new(child:View, ?offset:ScrollOffset) {
         super();
         this.child = child;
         this.children = [child];
-        this.offsetBinding = offset;
+        this.offsetBinding = offset != null
+            ? offset
+            : new ScrollOffset(function() return ownOffset, function(v) ownOffset = v);
         this.contentHeight = 0;
         this.visibleHeight = 0;
         this.focusable = true;
@@ -78,9 +123,27 @@ class ScrollView extends View {
         };
         var fw = getFixedWidth();
         var fh = getFixedHeight();
+
+        // As tall as its content, and no taller than the box it was offered.
+        //
+        // It used to ask for the whole box unconditionally, which is right for
+        // the one place it had ever been used -- a scroll view AS the screen --
+        // and wrong as one of six children of a stack: two greedy siblings
+        // divided the height between them and the other four got none. The
+        // kitchen sink drew exactly one line on this backend for that reason.
+        //
+        // Content taller than the box still gets the box, which is the case
+        // that scrolls; this only stops an empty or short one from taking
+        // space it has nothing to put in.
+        var content = child == null
+            ? 0
+            : child.measure(Constraint.AtMost(maxW - insets.horizontalTotal(), 10000)).height;
+        var natural = content + insets.verticalTotal();
+        if (natural > maxH) natural = maxH;
+
         return new Size(
             fw > 0 ? fw : maxW,
-            fh > 0 ? fh : maxH
+            fh > 0 ? fh : natural
         );
     }
 
