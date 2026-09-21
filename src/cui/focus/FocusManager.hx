@@ -25,6 +25,9 @@ class FocusManager {
     **/
     var focusedCell:Dynamic = null;
 
+    /** The key of the focused control, for one that edits no cell. **/
+    var focusedKey:Null<String> = null;
+
     public function new() {
         focusIndex = 0;
         focusableViews = [];
@@ -37,6 +40,17 @@ class FocusManager {
         if (focusedCell != null) {
             for (i in 0...focusableViews.length) {
                 if (focusableViews[i].focusIdentity() == focusedCell) {
+                    focusIndex = i;
+                    return;
+                }
+            }
+        }
+        // Then its key. A control that edits nothing -- a button in a list
+        // that sorts -- has no cell to be found by, and was found by position:
+        // the focus stayed on the slot while the button moved out of it.
+        if (focusedKey != null) {
+            for (i in 0...focusableViews.length) {
+                if (focusableViews[i].key == focusedKey) {
                     focusIndex = i;
                     return;
                 }
@@ -55,6 +69,7 @@ class FocusManager {
     function remember():Void {
         var view = currentFocus();
         focusedCell = view == null ? null : view.focusIdentity();
+        focusedKey = view == null ? null : view.key;
     }
 
     function collectFocusable(view:View):Void {

@@ -79,6 +79,8 @@ class Vocabulary {
 			// `nui.Node`, which is the point and is also a change of type at
 			// every call site. See `mui.macros.Backend.Vocabulary.viewOf`.
 			#if mui_views
+			// A key written in markup reaches the view. See `mui.macros.Backend.Vocabulary.keyed`.
+			keyed: (view, key, pos) -> macro $view.keyed($key),
 			viewOf: (tag, given, children, pos) ->
 				nui.macros.Construct.expr(DIALECT, tag, given, children, pos),
 			// The canon's nine, mapped where they were already mapped: a

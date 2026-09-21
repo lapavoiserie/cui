@@ -18,6 +18,26 @@ class View {
     public var frame:Rect;
     public var focusable:Bool;
 
+    /**
+        Which sibling this is, when its position does not say.
+
+        Identity here is positional -- the focus ring is rebuilt every frame and
+        a control that edits no cell is found again by where it sits. That is an
+        identity only while rows stay put: a list that sorts or gains a row at
+        the top moves every row below it, and the focus follows the slot rather
+        than the control. A key is how a row says it is still itself.
+
+        A control that EDITS a cell needs none: `cui.focus.FocusManager` follows
+        the cell first. This is for the others -- a row of buttons, a list.
+    **/
+    public var key:Null<String> = null;
+
+    /** Give this view a key, and hand it back. See `key`. **/
+    public function keyed(key:String):View {
+        this.key = key;
+        return this;
+    }
+
     // Global focus manager reference, set by EventLoop
     public static var focusManager:FocusManager;
 

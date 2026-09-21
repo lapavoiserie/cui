@@ -1093,7 +1093,27 @@ class TestAll {
         assert(second.get() == "ab", "the next keystroke lands in the same cell, after the caret (\"" + second.get() + "\")");
         assert(first.get() == "" && extra.get() == false, "and nowhere else");
 
-        // A control that edits nothing is still followed by position.
+        // ...and a control that edits nothing follows its KEY, when it has
+        // one. A row of buttons that sorts moved the focus to whatever took
+        // the slot, because a position is all such a control had.
+        {
+            function list(order:Array<String>):View
+                return new VStack([for (name in order)
+                    cast(new cui.ui.Button(name, () -> {}).keyed(name), View)], 0);
+
+            View.focusManager = new cui.focus.FocusManager();
+            var before = list(["alpha", "beta", "gamma"]);
+            View.focusManager.buildFocusRing(before);
+            View.focusManager.focusView(before.children[2]);
+            View.focusManager.buildFocusRing(list(["gamma", "alpha", "beta"]));
+            var focused:Dynamic = View.focusManager.currentFocus();
+            assert(focused != null && focused.key == "gamma",
+                "a keyed control keeps the focus when the list reorders");
+            assert(View.focusManager.focusIndex == 0, "...at wherever it moved to");
+        }
+
+        // A control that edits nothing AND has no key is still followed by
+        // position: that is all a position can honestly do.
         var buttons = new VStack([new cui.ui.Button("one", () -> {}), new cui.ui.Button("two", () -> {})], 0);
         View.focusManager = new cui.focus.FocusManager();
         View.focusManager.buildFocusRing(buttons);
