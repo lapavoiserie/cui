@@ -33,7 +33,7 @@ class Input extends View {
         one slot is enough. The same argument `pui.ui.TextInput` makes for its
         blink phase.
     **/
-    static var caretOwner:Int = -1;
+    static var caretOwner:Dynamic = -1;
 
     static var caret:Int = 0;
 
@@ -57,7 +57,7 @@ class Input extends View {
         `receivesValue` is set -- for an ordinary field the binding is written
         by the field and read straight back, and there is nothing to reconcile.
     **/
-    static var draftOwner:Int = -1;
+    static var draftOwner:Dynamic = -1;
 
     static var draft:Null<String> = null;
 
@@ -82,6 +82,10 @@ class Input extends View {
     **/
     @:action("onSubmit") public var onSubmit:Null<Void->Void> = null;
 
+    override public function focusIdentity():Dynamic {
+        return binding == null ? null : binding.source;
+    }
+
     public function new(binding:cui.state.TextBinding, placeholder:String = "") {
         super();
         this.binding = binding;
@@ -89,8 +93,18 @@ class Input extends View {
         this.focusable = true;
     }
 
-    /** Which slot of the focus ring this field is, or -1 when it has none. **/
-    inline function slot():Int {
+    /**
+        Who owns the caret and the draft: the CELL this field edits, and the
+        slot of the focus ring only when it edits none.
+
+        It was always the slot. Insert a focusable control above a field being
+        typed into and the slot names another field -- which then showed, and
+        on leaving would have committed, the draft typed into the first one.
+        For a `Password` that draft is the password.
+    **/
+    inline function slot():Dynamic {
+        var cell = focusIdentity();
+        if (cell != null) return cell;
         return View.focusManager == null ? -1 : View.focusManager.focusIndex;
     }
 

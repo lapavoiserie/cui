@@ -218,6 +218,16 @@ class View {
         }
     }
 
+    /**
+        What this control edits -- the state cell behind its binding -- or null.
+
+        `cui.focus.FocusManager` follows it: see there for why a position in
+        the focus ring is not an identity.
+    **/
+    public function focusIdentity():Dynamic {
+        return null;
+    }
+
     public function isHidden():Bool {
         for (mod in modifiers) {
             switch (mod) {

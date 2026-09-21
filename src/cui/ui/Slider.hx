@@ -25,6 +25,10 @@ class Slider extends View {
     @:prop var max:Float;
     var step:Float;
 
+    override public function focusIdentity():Dynamic {
+        return binding == null ? null : binding.source;
+    }
+
     public function new(binding:SliderBinding, min:Float = 0.0, max:Float = 1.0, step:Float = 0.05) {
         super();
         this.binding = binding;
@@ -130,6 +134,9 @@ abstract SliderBinding(SliderBindingCell) from SliderBindingCell to SliderBindin
 }
 
 class SliderBindingCell {
+    /** The cell this was made from, if any. See `cui.state.Binding.source`. **/
+    public var source(default, null):Dynamic = null;
+
     var _get:Void->Float;
     var _set:Float->Void;
 
@@ -147,9 +154,11 @@ class SliderBindingCell {
     }
 
     public static function fromState(state:FloatState):SliderBindingCell {
-        return new SliderBindingCell(
+        var made = new SliderBindingCell(
             () -> state.get(),
             (v) -> state.set(v)
         );
+        made.source = state;
+        return made;
     }
 }

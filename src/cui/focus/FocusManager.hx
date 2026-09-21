@@ -8,6 +8,23 @@ class FocusManager {
     public var focusIndex:Int;
     var focusableViews:Array<View>;
 
+    /**
+        What the focused control edits, remembered across rebuilds.
+
+        The ring is rebuilt from scratch on every frame and the focus was an
+        INDEX into it, clamped with a modulo. So the focus teleported the
+        moment the number of focusable views above it changed -- `pui`'s docs
+        have cited this as the thing not to do since the day its own focus was
+        written -- and with it the caret and the draft, which `Input` keyed by
+        the same slot.
+
+        A control that edits a cell is that cell's control. When the ring is
+        rebuilt the focus goes to the view editing the same cell, wherever it
+        sits now; only a control that edits nothing (a `Button`) is still
+        followed by position, and that is all a position can honestly do.
+    **/
+    var focusedCell:Dynamic = null;
+
     public function new() {
         focusIndex = 0;
         focusableViews = [];
@@ -16,12 +33,28 @@ class FocusManager {
     public function buildFocusRing(root:View):Void {
         focusableViews = [];
         collectFocusable(root);
+        // The cell first: the control that edits what the focused one edited.
+        if (focusedCell != null) {
+            for (i in 0...focusableViews.length) {
+                if (focusableViews[i].focusIdentity() == focusedCell) {
+                    focusIndex = i;
+                    return;
+                }
+            }
+        }
         // Clamp focusIndex if views changed
         if (focusableViews.length > 0) {
             focusIndex = focusIndex % focusableViews.length;
         } else {
             focusIndex = 0;
         }
+        remember();
+    }
+
+    /** Note what the focused control edits, for the next rebuild. **/
+    function remember():Void {
+        var view = currentFocus();
+        focusedCell = view == null ? null : view.focusIdentity();
     }
 
     function collectFocusable(view:View):Void {
@@ -36,11 +69,13 @@ class FocusManager {
     public function focusNext():Void {
         if (focusableViews.length == 0) return;
         focusIndex = (focusIndex + 1) % focusableViews.length;
+        remember();
     }
 
     public function focusPrevious():Void {
         if (focusableViews.length == 0) return;
         focusIndex = (focusIndex - 1 + focusableViews.length) % focusableViews.length;
+        remember();
     }
 
     public function currentFocus():Null<View> {
@@ -61,6 +96,7 @@ class FocusManager {
         for (i in 0...focusableViews.length) {
             if (focusableViews[i] == view) {
                 focusIndex = i;
+                remember();
                 return;
             }
         }

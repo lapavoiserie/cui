@@ -1054,6 +1054,55 @@ class TestAll {
     }
 
     /**
+        The focus belongs to the cell, not to the slot.
+
+        The ring is rebuilt every frame and the focus was an index into it, so
+        a focusable control appearing ABOVE the field being typed into moved
+        the focus -- and the caret and the draft, keyed by the same slot -- to
+        another control.
+    **/
+    static function testFocusFollowsTheCell():Void {
+        section("Focus follows the cell");
+
+        var first = new cui.state.State.StringState("", "focusFirst");
+        var second = new cui.state.State.StringState("", "focusSecond");
+        var extra = new cui.state.State.BoolState(false, "focusExtra");
+
+        function page(withExtra:Bool):View {
+            var rows:Array<View> = [];
+            if (withExtra) rows.push(new cui.ui.Checkbox("extra", extra));
+            rows.push(new cui.ui.Input(first, "first"));
+            rows.push(new cui.ui.Input(second, "second"));
+            return new VStack(rows, 0);
+        }
+
+        View.focusManager = new cui.focus.FocusManager();
+        var before = page(false);
+        View.focusManager.buildFocusRing(before);
+        View.focusManager.focusView(before.children[1]);
+        View.focusManager.dispatchToFocused(Key(new cui.event.KeyEvent.KeyEvent(Char("a"))));
+        assert(second.get() == "a", "typing lands in the focused field");
+
+        var after = page(true);
+        View.focusManager.buildFocusRing(after);
+        assert(View.focusManager.currentFocus() == after.children[2],
+            "a control inserted above: the focus followed the field, not the slot");
+        View.focusManager.dispatchToFocused(Key(new cui.event.KeyEvent.KeyEvent(Char("b"))));
+        assert(second.get() == "ab", "the next keystroke lands in the same cell, after the caret (\"" + second.get() + "\")");
+        assert(first.get() == "" && extra.get() == false, "and nowhere else");
+
+        // A control that edits nothing is still followed by position.
+        var buttons = new VStack([new cui.ui.Button("one", () -> {}), new cui.ui.Button("two", () -> {})], 0);
+        View.focusManager = new cui.focus.FocusManager();
+        View.focusManager.buildFocusRing(buttons);
+        View.focusManager.focusNext();
+        View.focusManager.buildFocusRing(buttons);
+        assert(View.focusManager.focusIndex == 1, "a control that edits nothing keeps its position");
+
+        View.focusManager = null;
+    }
+
+    /**
         A password field: masked, and the value is the application's.
 
         The difference from a secret is purpose. Here the application binds the
@@ -1229,6 +1278,7 @@ class TestAll {
         testEditing();
         testReceivedControls();
         testPassword();
+        testFocusFollowsTheCell();
         testVocabulary();
         testClip();
         testControlsCut();

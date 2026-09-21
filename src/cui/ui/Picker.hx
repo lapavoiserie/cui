@@ -59,6 +59,9 @@ abstract PickerBinding(PickerBindingCell) from PickerBindingCell to PickerBindin
 }
 
 class PickerBindingCell {
+    /** The cell this was made from, if any. See `cui.state.Binding.source`. **/
+    public var source(default, null):Dynamic = null;
+
     var _get:Void->Int;
     var _set:Int->Void;
 
@@ -76,10 +79,12 @@ class PickerBindingCell {
     }
 
     public static function fromState(state:IntState):PickerBindingCell {
-        return new PickerBindingCell(
+        var made = new PickerBindingCell(
             () -> state.get(),
             (v) -> state.set(v)
         );
+        made.source = state;
+        return made;
     }
 }
 
@@ -96,6 +101,10 @@ class Picker extends View {
     @:children("Text", "text") public var options:Array<String>;
 
     @:prop("selectedIndex", "onSelect") var binding:PickerBinding;
+
+    override public function focusIdentity():Dynamic {
+        return binding == null ? null : binding.source;
+    }
 
     public function new(label:String, options:Array<String>, binding:PickerBinding) {
         super();

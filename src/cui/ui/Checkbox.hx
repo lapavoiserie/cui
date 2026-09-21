@@ -34,6 +34,9 @@ abstract CheckboxBinding(CheckboxBindingCell) from CheckboxBindingCell to Checkb
 }
 
 class CheckboxBindingCell {
+    /** The cell this was made from, if any. See `cui.state.Binding.source`. **/
+    public var source(default, null):Dynamic = null;
+
     var _get:Void->Bool;
     var _set:Bool->Void;
 
@@ -55,10 +58,12 @@ class CheckboxBindingCell {
     }
 
     public static function fromState(state:BoolState):CheckboxBindingCell {
-        return new CheckboxBindingCell(
+        var made = new CheckboxBindingCell(
             () -> state.get(),
             (v) -> state.set(v)
         );
+        made.source = state;
+        return made;
     }
 }
 
@@ -66,6 +71,10 @@ class CheckboxBindingCell {
 class Checkbox extends View {
     @:prop var label:String;
     @:prop("isOn", "onToggle") var binding:CheckboxBinding;
+
+    override public function focusIdentity():Dynamic {
+        return binding == null ? null : binding.source;
+    }
 
     public function new(label:String, binding:CheckboxBinding) {
         super();
