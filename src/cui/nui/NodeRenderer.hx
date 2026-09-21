@@ -218,8 +218,28 @@ class NodeRenderer {
 				// This said "no terminal equivalent" and dropped it silently.
 				case nui.Modifiers.CLIP:
 					view.modifiers.push(Clip);
+				// A size in cells. The canon's width and height were skipped
+				// here while `View.getFixedWidth`/`getFixedHeight` -- which
+				// every control's `measure` reads -- sat one line away.
+				case "width":
+					if (m.floats != null && m.floats.length > 0)
+						view.modifiers.push(WidthPolicy(Fixed(Std.int(m.floats[0]))));
+				case "height":
+					if (m.floats != null && m.floats.length > 0)
+						view.modifiers.push(HeightPolicy(Fixed(Std.int(m.floats[0]))));
+				// What a terminal can draw of opacity: none of it (hidden), some
+				// of it (the dim attribute, SGR 2), or all of it (nothing to
+				// do). The same kind of approximation `border` already makes --
+				// one line style, whatever width and radius were asked -- and
+				// said here rather than discovered.
+				case "opacity":
+					var o = m.floats != null && m.floats.length > 0 ? m.floats[0] : 1.0;
+					if (o <= 0) view.modifiers.push(Hidden);
+					else if (o < 1) view.modifiers.push(Dim);
 				case _:
-					// No terminal equivalent — skipped on purpose.
+					// `flex`, and anything a received tree carries that the
+					// canon does not. `flex` is REFUSED for written trees by
+					// `Vocabulary.HONOURED`; a received one skips it.
 			}
 		}
 	}

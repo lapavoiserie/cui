@@ -30,6 +30,20 @@ class Vocabulary {
 		markup -- and a second copy of the answer is a second place to get it
 		wrong. One dialect, both readers.
 	**/
+	/**
+		The canon's decorations this backend draws on its own views.
+
+		It answered all nine, and drew five: `opacity`, `width`, `height` and
+		`flex` fell through to "no terminal equivalent -- skipped on purpose"
+		in `NodeRenderer.applyModifiers`. So markup accepted them and the
+		screen ignored them, which is exactly what `honoured` exists to stop.
+		Width, height and opacity are drawn now (see there); `flex` is not --
+		`SizePolicy.Fill` is declared and no stack reads it, the stacks share
+		space by sniffing for `Spacer` -- so it is refused, by name.
+	**/
+	public static final HONOURED = ["padding", "backgroundColor", "foregroundColor", "border",
+		"opacity", "clip", "width", "height"];
+
 	public static final DIALECT:Dialect = {
 		pack: "cui.ui",
 		view: "cui.View",
@@ -81,7 +95,7 @@ class Vocabulary {
 			// honour is knowable here, and this project's rule is that
 			// something knowable is a compile error rather than a marker or a
 			// line in a log. See `mui.macros.Backend.Vocabulary.honoured`.
-			honoured: () -> nui.Modifiers.NAMES,
+			honoured: () -> HONOURED,
 			#end
 		});
 	}
