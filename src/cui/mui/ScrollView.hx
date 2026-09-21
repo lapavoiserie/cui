@@ -10,7 +10,7 @@ package cui.mui;
 **/
 class ScrollView extends cui.ui.ScrollView {
 	public function new(content:Array<cui.View>, ?offset:cui.ui.ScrollView.ScrollOffset) {
-		super(new cui.ui.VStack(content), offset != null ? offset : ownPosition());
+		super(content, offset != null ? offset : ownPosition());
 	}
 
 	/**

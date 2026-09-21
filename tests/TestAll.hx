@@ -467,7 +467,9 @@ class TestAll {
             .child(new nui.Node("Button")
                 .prop("label", nui.PropValue.PString("OK"))
                 .prop("onClick", nui.PropValue.PCallback(() -> pressed++)));
-        tree.modifier({type: "padding", floats: [1]});
+        // 16 points: one row and two columns here. It said `1` while the
+        // canon's lengths were read as cells -- see `cui.nui.Units`.
+        tree.modifier({type: "padding", floats: [16]});
 
         var view = NodeRenderer.build(tree);
         assert(Std.isOfType(view, VStack), "VStack construit depuis un nui.Node");
@@ -478,7 +480,7 @@ class TestAll {
         // Il rend vraiment : on dessine dans un buffer et on relit les cellules.
         var buf = new Buffer(20, 4);
         view.render(buf, new Rect(0, 0, 20, 4));
-        // padding:1 sur la racine décale d'une colonne et d'une ligne — on lit large.
+        // padding sur la racine décale d'une ligne et de deux colonnes — on lit large.
         var line = "";
         for (x in 0...10) line += buf.get(x, 1).char;
         assert(StringTools.trim(line) == "Salut", "l'arbre étranger est dessiné (\"" + line + "\")");
@@ -889,7 +891,7 @@ class TestAll {
             (new cui.ui.Button("b", () -> {}) : View),
             new cui.ui.Checkbox("c", new cui.ui.Checkbox.CheckboxBinding(() -> false, _ -> {})),
             new cui.ui.Picker("p", ["x"], new cui.ui.Picker.PickerBinding(() -> 0, _ -> {})),
-            new cui.ui.ScrollView(new VStack([new Text("a")], 0),
+            new cui.ui.ScrollView([new VStack([new Text("a")], 0)],
                 new cui.ui.ScrollView.ScrollOffset(() -> 0, _ -> {})),
         ]) {
             assert(built.focusable, "a view that handles keys is focusable");

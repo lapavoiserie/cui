@@ -75,7 +75,7 @@ class ScrollOffsetCell {
 	nothing about that changed.
 **/
 @:node("ScrollView")
-@:content("child")
+@:content("content")
 class ScrollView extends View {
     var child:View;
     var offsetBinding:ScrollOffset;
@@ -85,7 +85,16 @@ class ScrollView extends View {
     /** Where this view is scrolled to when nobody outside holds it. **/
     var ownOffset:Int = 0;
 
-    public function new(child:View, ?offset:ScrollOffset) {
+    /**
+        @param content what scrolls. Several children are stacked, because the
+        canon's `ScrollView` holds a list and this one held exactly one: markup
+        wrapping twelve rows in a scroll view kept the FIRST and dropped eleven
+        without a word. A single view is still a single view.
+    **/
+    public function new(content:Array<View>, ?offset:ScrollOffset) {
+        var child = content == null || content.length == 0
+            ? new VStack([], 0)
+            : (content.length == 1 ? content[0] : new VStack(content, 0));
         super();
         this.child = child;
         this.children = [child];

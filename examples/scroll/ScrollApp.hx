@@ -95,7 +95,7 @@ class ScrollApp extends App {
                     .dim(),
             ], 0),
             cast(new ScrollView(
-                new VStack(lines, 0),
+                [new VStack(lines, 0)],
                 ScrollOffset.fromState(scrollPos_)
             ), View).border(Single),
         ], 0).padding(1).border(Rounded);

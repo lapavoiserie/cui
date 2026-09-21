@@ -9,7 +9,11 @@ import cui.render.Buffer;
 @:node("VStack")
 @:content("children")
 class VStack extends View {
-    @:prop public var spacing(default, null):Int;
+    /**
+        The gap between children, in CELLS -- converted from the canon's
+        points when it arrives from outside. See `cui.nui.Units`.
+    **/
+    @:prop @:convert(cui.nui.Units.rows) public var spacing(default, null):Int;
 
     public function new(children:Array<View>, spacing:Int = 0) {
         super();

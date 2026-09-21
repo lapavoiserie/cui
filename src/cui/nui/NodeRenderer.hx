@@ -197,12 +197,21 @@ class NodeRenderer {
 		if (modifiers == null) return;
 		for (m in modifiers) {
 			switch (m.type) {
+				// Points to cells, per axis: top and bottom are rows, left and
+				// right are columns. `Std.int` on the raw number read the
+				// canon's points as cells -- 12 points of breathing room
+				// became twelve blank lines. See `cui.nui.Units`.
 				case "padding":
 					var f = m.floats;
 					if (f != null && f.length == 1) {
-						view.modifiers.push(PaddingAll(Std.int(f[0])));
+						// One number is all four edges, and the two axes do
+						// not agree on what it is worth. Rows: a terminal's
+						// vertical space is the scarce one.
+						view.modifiers.push(PaddingEdges(Units.rows(f[0]), Units.columns(f[0]),
+							Units.rows(f[0]), Units.columns(f[0])));
 					} else if (f != null && f.length == 4) {
-						view.modifiers.push(PaddingEdges(Std.int(f[0]), Std.int(f[1]), Std.int(f[2]), Std.int(f[3])));
+						view.modifiers.push(PaddingEdges(Units.rows(f[0]), Units.columns(f[1]),
+							Units.rows(f[2]), Units.columns(f[3])));
 					}
 				case "border":
 					view.modifiers.push(Border(BorderStyle.Single));
@@ -223,10 +232,10 @@ class NodeRenderer {
 				// every control's `measure` reads -- sat one line away.
 				case "width":
 					if (m.floats != null && m.floats.length > 0)
-						view.modifiers.push(WidthPolicy(Fixed(Std.int(m.floats[0]))));
+						view.modifiers.push(WidthPolicy(Fixed(Units.columns(m.floats[0]))));
 				case "height":
 					if (m.floats != null && m.floats.length > 0)
-						view.modifiers.push(HeightPolicy(Fixed(Std.int(m.floats[0]))));
+						view.modifiers.push(HeightPolicy(Fixed(Units.rows(m.floats[0]))));
 				// What a terminal can draw of opacity: none of it (hidden), some
 				// of it (the dim attribute, SGR 2), or all of it (nothing to
 				// do). The same kind of approximation `border` already makes --
